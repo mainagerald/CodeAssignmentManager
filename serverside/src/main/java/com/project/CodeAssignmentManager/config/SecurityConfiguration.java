@@ -30,10 +30,10 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(request->request.requestMatchers("/api/v1/auth/**").permitAll()
+                .authorizeHttpRequests(request->request.requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/admin").hasAnyAuthority(Role.ADMIN.name())
-                        .requestMatchers("/api/v1/user").hasAnyAuthority(Role.USER.name())
+                        .requestMatchers("/api/admin").hasAnyAuthority(Role.ADMIN.name())
+                        .requestMatchers("/api/user").hasAnyAuthority(Role.USER.name())
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
 //                .oauth2Login(Customizer.withDefaults())
