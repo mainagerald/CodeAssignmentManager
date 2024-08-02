@@ -20,7 +20,7 @@ public class JwtServiceImpl implements JwtService {
     public String generateToken(UserDetails userDetails){
         return Jwts.builder().setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*5))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*5*10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
