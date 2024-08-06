@@ -1,5 +1,6 @@
 package com.project.CodeAssignmentManager.service.impl;
 
+import com.project.CodeAssignmentManager.dto.CodeAssignmentCreateDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentListResponseDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentResponseDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentUpdateDto;
@@ -28,9 +29,13 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final AssignmentRepository assignmentRepository;
     @Override
     @Transactional
-    public CodeAssignmentResponseDto createAssignment(User user) {
+    public CodeAssignmentResponseDto createAssignment(CodeAssignmentCreateDto createDto, User user) {
         CodeAssignment assignment = new CodeAssignment();
-        assignment.setStatus("Needs to be submitted");
+        assignment.setStatus(createDto.getStatus());
+        assignment.setGithubUrl(createDto.getGithubUrl());
+        assignment.setBranch(createDto.getBranch());
+        assignment.setCodeReviewVideoUrl(createDto.getCodeReviewVideoUrl());
+        assignment.setAssignmentNumber(createDto.getAssignmentNumber());
         assignment.setUser(user);
         CodeAssignment savedAssignment = assignmentRepository.save(assignment);
         return convertToResponseDto(savedAssignment);
@@ -69,15 +74,19 @@ public class AssignmentServiceImpl implements AssignmentService {
         dto.setGithubUrl(assignment.getGithubUrl());
         dto.setBranch(assignment.getBranch());
         dto.setCodeReviewVideoUrl(assignment.getCodeReviewVideoUrl());
-        dto.setUserId(assignment.getUser().getId());
+        dto.setAssignmentNumber(assignment.getAssignmentNumber());
         return dto;
     }
+
 
     private CodeAssignmentListResponseDto convertToListResponseDto(CodeAssignment assignment) {
         CodeAssignmentListResponseDto dto = new CodeAssignmentListResponseDto();
         dto.setId(assignment.getId());
         dto.setStatus(assignment.getStatus());
-        dto.setUserId(assignment.getUser().getId());
+        dto.setBranch(assignment.getBranch());
+        dto.setGithubUrl(assignment.getGithubUrl());
+        dto.setAssignmentNumber(assignment.getAssignmentNumber());
+//        dto.setUserId(assignment.getUser().getId());
         return dto;
     }
 
@@ -86,5 +95,8 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setBranch(dto.getBranch());
         assignment.setGithubUrl(dto.getGithubUrl());
         assignment.setCodeReviewVideoUrl(dto.getCodeReviewVideoUrl());
+        if (dto.getAssignmentNumber() != null) {
+            assignment.setAssignmentNumber(dto.getAssignmentNumber());
+        }
     }
 }

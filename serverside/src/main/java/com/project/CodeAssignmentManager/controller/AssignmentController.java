@@ -18,8 +18,8 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @PostMapping("/create")
-    public ResponseEntity<CodeAssignmentResponseDto> addAssignment(@AuthenticationPrincipal User user) {
-        CodeAssignmentResponseDto assignment = assignmentService.createAssignment(user);
+    public ResponseEntity<CodeAssignmentResponseDto> addAssignment(CodeAssignmentCreateDto codeAssignmentCreateDto,@AuthenticationPrincipal User user) {
+        CodeAssignmentResponseDto assignment = assignmentService.createAssignment(codeAssignmentCreateDto, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
     }
 

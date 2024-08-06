@@ -10,4 +10,5 @@ public interface AuthService {
     User signUp(SignUpRequest signUpRequest);
     JwtAuthResponse signIn(SignInRequest signInRequest);
     JwtAuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
+    boolean isTokenValid(String token);
 }

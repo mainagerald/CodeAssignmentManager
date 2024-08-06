@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocalStorageState } from "../util/useLocalState";
+import { Form, FormGroup, FormControl, Button, Alert, Spinner, Container, Col, Row, Badge, DropdownButton, Dropdown, ButtonGroup } from "react-bootstrap";
 
 const AssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
@@ -34,74 +35,120 @@ const AssignmentView = () => {
   }
 
   function updateAssignment(prop, value) {
-    setAssignment((prevAssignment) => {
-      const updatedAssignment = { ...prevAssignment, [prop]: value };
-      console.log("Updated assignment:", updatedAssignment);
-      return updatedAssignment;
-    });
-    // const newAssignment = {...assignment}
-    // newAssignment[prop] = value;
-    // setAssignment(newAssignment);
-    // return newAssignment;
+    setAssignment(prevAssignment => ({
+      ...prevAssignment,
+      [prop]: value
+    }));
   }
 
-  function submitUpdatedAssignment(){
+  async function submitUpdatedAssignment() {
     try {
       console.log("assignment state", assignment);
-      const updatedAssignmentResponse = axios.put(`http://localhost:8888/api/assignments/update/${assignmentId}`,
+      const updatedAssignmentResponse = await axios.put(
+        `http://localhost:8888/api/assignments/update/${assignmentId}`,
         assignment,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth}`
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth}`,
+          },
         }
-      }
-      )
+      );
       console.log("response from update-->", updatedAssignmentResponse);
+      alert("Assignment updated successfully!");
     } catch (error) {
       console.error("Error: ", error?.message);
+      setError("Failed to update assignment.");
     }
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <Alert variant="danger">Error: {error}</Alert>;
   }
 
   if (!assignment) {
-    return <div>Loading...</div>;
+    return (
+      <Container className="d-flex justify-content-center mt-5">
+        <Spinner animation="border" role="status">
+          <span className="sr-only">Loading...</span>
+        </Spinner>
+      </Container>
+    );
   }
 
+  const allAssignmentNumbers = [
+    { name: "ASSIGNMENT_1", assignmentNumber: 1, description: "simple" },
+    { name: "ASSIGNMENT_2", assignmentNumber: 2, description: "mid-medium" },
+    { name: "ASSIGNMENT_3", assignmentNumber: 3, description: "medium" },
+    { name: "ASSIGNMENT_4", assignmentNumber: 4, description: "mid-hard" },
+    { name: "ASSIGNMENT_5", assignmentNumber: 5, description: "hard" },
+    { name: "ASSIGNMENT_6", assignmentNumber: 6, description: "professional" },
+    { name: "ASSIGNMENT_7", assignmentNumber: 7, description: "world-class" },
+    { name: "ASSIGNMENT_8", assignmentNumber: 8, description: "legendary" },
+    { name: "ASSIGNMENT_9", assignmentNumber: 9, description: "ultimate" }
+  ];
+
   return (
-    <div>
-      <h3>Assignment {assignmentId}</h3>
-      <h2>Status: {assignment.status}</h2>
-      <h3>
-        Github URL:{" "}
-        <input
-          id="githubUrl"
-          type="url"
-          value={assignment.githubUrl || ""}
-          onChange={(e) => updateAssignment("githubUrl", e.target.value)}
-        />
-      </h3>
-      <h3>
-        Branch:{" "}
-        <input
-          id="branch"
-          type="text"
-          value={assignment.branch || ""}
-          onChange={(e) => updateAssignment("branch", e.target.value)}
-        />
-      </h3>
-      <pre>{JSON.stringify(assignment, null, 2)}</pre>
-      <button
+    <Container className="mt-10">
+      <Row className="d-flex align-items-center">
+        <Col><h3>Assignment {assignmentId}</h3></Col>
+        <Col>
+          <Badge pill bg="info" style={{ fontSize: "1.1rem" }}>
+            {assignment.status}
+          </Badge>
+        </Col>
+      </Row>
+      <FormGroup as={Row} className="my-3" controlId="formPlainTextEmail">
+        <Form.Label column sm="3" md="2">Assignment #:</Form.Label>
+        <Col sm="9" md="8" lg="6">
+          <DropdownButton 
+            as={ButtonGroup} 
+            id="assignmentNumber" 
+            variant="info" 
+            title={`Assignment ${assignment.assignmentNumberWrapper.assignmentNumber}: ${assignment.assignmentNumberWrapper.name}`}
+            onSelect={(eventKey) => updateAssignment("assignmentNumber", JSON.parse(eventKey))}
+          >
+            {allAssignmentNumbers.map((item) => (
+              <Dropdown.Item key={item.name} eventKey={JSON.stringify(item)}>
+                Assignment {item.assignmentNumber}: {item.description}
+              </Dropdown.Item>
+            ))}
+          </DropdownButton>
+        </Col>
+      </FormGroup>
+      <FormGroup>
+        <Col sm="9" md="8" lg="6">
+          <Form.Label htmlFor="githubUrl">Github URL:</Form.Label>
+          <FormControl
+            id="githubUrl"
+            type="url"
+            placeholder="Enter the GitHub URL"
+            value={assignment.githubUrl || ""}
+            onChange={(e) => updateAssignment("githubUrl", e.target.value)}
+          />
+        </Col>
+      </FormGroup>
+      <FormGroup>
+        <Col sm="9" md="8" lg="6">
+          <Form.Label htmlFor="branch">Branch:</Form.Label>
+          <FormControl
+            id="branch"
+            type="text"
+            placeholder="Enter the branch name"
+            value={assignment.branch || ""}
+            onChange={(e) => updateAssignment("branch", e.target.value)}
+          />
+        </Col>
+      </FormGroup>
+      <Button
         type="submit"
-        className="mt-3 ml-3 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        onClick={()=>submitUpdatedAssignment()}
+        className="mt-3"
+        variant="primary"
+        onClick={submitUpdatedAssignment}
       >
         Update Assignment
-      </button>
-    </div>
+      </Button>
+    </Container>
   );
 };
 

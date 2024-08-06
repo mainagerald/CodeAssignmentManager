@@ -10,6 +10,8 @@ import com.project.CodeAssignmentManager.repository.UserRepository;
 import com.project.CodeAssignmentManager.service.AuthService;
 import com.project.CodeAssignmentManager.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final UserRepository userRepository;
     private  final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -61,5 +64,15 @@ public class AuthServiceImpl implements AuthService {
             return jwtAuthResponse;
         };
         return null;
+    }
+    public boolean isTokenValid(String token){
+        try{
+            String userEmail = jwtService.extractUsername(token);
+            var user = userRepository.findByEmail(userEmail).orElseThrow(()-> new IllegalArgumentException("Invalid email address!"));
+            return jwtService.isTokenValid(token, user);
+        }catch (Exception e){
+            log.error("Error occurred: {}", e.getMessage());
+            return false;
+        }
     }
 }

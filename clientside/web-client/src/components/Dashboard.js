@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useLocalStorageState } from "../util/useLocalState";
-import axios from 'axios';
+import axios from "axios";
 import { Link } from "react-router-dom";
+import Card from "react-bootstrap/Card";
+import Button from "react-bootstrap/Button";
 
 const Dashboard = () => {
   const [auth] = useLocalStorageState("", "jwt");
@@ -13,25 +15,26 @@ const Dashboard = () => {
   const createAssgnmntRequest = {
     githubUrl: githubUrl,
     codeReviewVideoUrl: codeReviewVideoUrl,
-    branch: branch
-  }
+    branch: branch,
+  };
 
-  useEffect(()=> {
-      getCurrentAssignments();
-  },[])
+  useEffect(() => {
+    getCurrentAssignments();
+  }, []);
 
-  async function getCurrentAssignments(){
+  async function getCurrentAssignments() {
     try {
-      const assignments = await axios.get("http://localhost:8888/api/assignments/fetch",
+      const assignments = await axios.get(
+        "http://localhost:8888/api/assignments/fetch",
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`
+            Authorization: `Bearer ${auth}`,
           },
         }
-      )
-      console.log("assignmentssss---->",assignments.data);
-      if(assignments.status===200){
+      );
+      console.log("assignmentssss---->", assignments);
+      if (assignments.status === 200) {
         setAssignments(assignments.data);
       }
     } catch (error) {
@@ -39,23 +42,24 @@ const Dashboard = () => {
     }
   }
 
-  async function createAssignment(){
+  async function createAssignment() {
     try {
-      const responseData = await axios.post("http://localhost:8888/api/assignments/create",
+      const responseData = await axios.post(
+        "http://localhost:8888/api/assignments/create",
         createAssgnmntRequest,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`
+            Authorization: `Bearer ${auth}`,
           },
         }
-      )
-      console.log("response pre--->",responseData)
-      if(responseData.status===200){
-        alert("Assignment Created!")
+      );
+      console.log("response pre--->", responseData);
+      if (responseData.status === 200) {
+        alert("Assignment Created!");
         const id = responseData.data.id;
         // console.log("data id--->", data.id)
-        return window.location.href=`/assignments/assignment=${id}`;
+        return (window.location.href = `/assignments/assignment=${id}`);
       }
     } catch (error) {
       alert(error.message);
@@ -63,16 +67,39 @@ const Dashboard = () => {
     }
   }
   return (
-    <div>
-      {assignments ? assignments.map((assignment)=>(
-        <div key={assignment.id}>
-          <Link to={`/assignments/${assignment.id}`}>Assignment: {assignment.id}</Link>
+    <div className="mt-5 ml-5">
+      {assignments ? (
+        <div className="d-grid gap-4" style={{gridTemplateColumns: "repeat(auto-fill, 18rem)"}}>
+          {assignments.map((assignment) => (
+            <Card key={assignment.id} style={{ width: "18rem" }}>
+              <Card.Body>
+                <Card.Title>Assignment # {assignment.id}</Card.Title>
+                <Card.Subtitle>Status: {assignment.status}</Card.Subtitle>
+                <Card.Text style={{ paddingTop: "4px" }}>
+                  Github Url: {assignment.githubUrl}
+                </Card.Text>
+                <Card.Text style={{ paddingTop: "4px" }}>
+                  Branch: {assignment.branch}
+                </Card.Text>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    window.location.href = `/assignments/${assignment.id}`;
+                  }}
+                >
+                  Edit
+                </Button>
+              </Card.Body>
+            </Card>
+          ))}
         </div>
-      )) : (<>Nothing to show yet:/</>) }
+      ) : (
+        <>Nothing to show yet:/</>
+      )}
       <button
         type="submit"
         className="mt-3 ml-3 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        onClick={()=>createAssignment()}
+        onClick={() => createAssignment()}
       >
         Submit Assignment
       </button>

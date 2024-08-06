@@ -35,4 +35,8 @@ public class AuthController {
     public ResponseEntity<JwtAuthResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest){
         return ResponseEntity.ok(authService.refreshToken(refreshTokenRequest));
     }
+    @PostMapping("/validate-token")
+    public ResponseEntity<?> validateToken(@RequestBody String token){
+        return ResponseEntity.ok(authService.isTokenValid(token));
+    }
 }
