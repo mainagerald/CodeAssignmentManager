@@ -95,8 +95,8 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setBranch(dto.getBranch());
         assignment.setGithubUrl(dto.getGithubUrl());
         assignment.setCodeReviewVideoUrl(dto.getCodeReviewVideoUrl());
-        if (dto.getAssignmentNumber() != null) {
-            assignment.setAssignmentNumber(dto.getAssignmentNumber());
-        }
+//        if (dto.getAssignmentNumber() != null) {
+//            assignment.setAssignmentNumber(dto.getAssignmentNumber());
+//        }
     }
 }

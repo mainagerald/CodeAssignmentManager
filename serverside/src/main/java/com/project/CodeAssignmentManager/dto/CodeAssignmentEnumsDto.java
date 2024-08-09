@@ -5,13 +5,7 @@ import com.project.CodeAssignmentManager.enums.AssignmentStatusEnum;
 import lombok.Data;
 
 @Data
-public class CodeAssignmentListResponseDto {
-    private Long id;
-    private String status;
-    private String githubUrl;
-    private String branch;
-    private AssignmentNumberEnum assignmentNumber;
+public class CodeAssignmentEnumsDto {
     private AssignmentNumberEnum[] assignmentNumberEnums = AssignmentNumberEnum.values();
     private AssignmentStatusEnum[] assignmentStatusEnums = AssignmentStatusEnum.values();
-
 }

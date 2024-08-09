@@ -8,5 +8,5 @@ public class CodeAssignmentUpdateDto {
     private String githubUrl;
     private String branch;
     private String codeReviewVideoUrl;
-    private AssignmentNumberEnum assignmentNumber;
+//    private AssignmentNumberEnum assignmentNumber;
 }

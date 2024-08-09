@@ -1,8 +1,10 @@
 package com.project.CodeAssignmentManager.enums;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 
 @Getter
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum AssignmentNumberEnum {
     ASSIGNMENT_1(1, "simple"),
     ASSIGNMENT_2(2, "mid-medium"),
