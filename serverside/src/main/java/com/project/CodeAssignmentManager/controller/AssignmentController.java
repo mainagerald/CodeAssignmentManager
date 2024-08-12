@@ -1,6 +1,8 @@
 package com.project.CodeAssignmentManager.controller;
 
 import com.project.CodeAssignmentManager.dto.*;
+import com.project.CodeAssignmentManager.enums.AssignmentNumberEnum;
+import com.project.CodeAssignmentManager.enums.AssignmentStatusEnum;
 import com.project.CodeAssignmentManager.model.User;
 import com.project.CodeAssignmentManager.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @PostMapping("/create")
-    public ResponseEntity<CodeAssignmentResponseDto> addAssignment(CodeAssignmentCreateDto codeAssignmentCreateDto,@AuthenticationPrincipal User user) {
+    public ResponseEntity<CodeAssignmentResponseDto> addAssignment(@RequestBody CodeAssignmentCreateDto codeAssignmentCreateDto,@AuthenticationPrincipal User user) {
         CodeAssignmentResponseDto assignment = assignmentService.createAssignment(codeAssignmentCreateDto, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(assignment);
     }
@@ -44,5 +46,13 @@ public class AssignmentController {
             @AuthenticationPrincipal User user) {
         CodeAssignmentResponseDto updatedAssignment = assignmentService.updateAssignment(id, codeAssignmentDto, user);
         return ResponseEntity.ok(updatedAssignment);
+    }
+    @GetMapping("/enums")
+    public ResponseEntity<CodeAssignmentEnumsDto> getEnums(@AuthenticationPrincipal User user){
+        CodeAssignmentEnumsDto dto = new CodeAssignmentEnumsDto(
+                AssignmentStatusEnum.values(),
+                AssignmentNumberEnum.values()
+        );
+        return ResponseEntity.ok(dto);
     }
 }
