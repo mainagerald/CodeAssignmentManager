@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useLocalStorageState } from "../util/useLocalState";
+import Spinner from "../util/Spinner";
 import {
   Form,
   FormGroup,
-  FormControl,
   Button,
   Alert,
-  Spinner,
   Container,
   Col,
   Row,
@@ -16,7 +15,7 @@ import {
   Dropdown,
   ButtonGroup,
 } from "react-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const AssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
@@ -57,10 +56,10 @@ const AssignmentView = () => {
       );
       if (response.status === 200) {
         setAssignment(response.data);
-        setAssignmentNumberEnums(response.data.assignmentNumberEnums ||[]);
-        setAssignmentStatusEnums(response.data.assignmentStatusEnums||[]);
+        setAssignmentNumberEnums(response.data.assignmentNumberEnums || []);
+        setAssignmentStatusEnums(response.data.assignmentStatusEnums || []);
       }
-      console.log("data", response.data)
+      console.log("data", response.data);
     } catch (error) {
       console.error("Error fetching assignment:", error);
       setError(error.response?.data?.message || error.message);
@@ -118,10 +117,10 @@ const AssignmentView = () => {
   }
 
   return (
-    <Container className="mt-5">
+    <Container className="mt-5 p-4 bg-white shadow-md rounded">
       <Row className="d-flex align-items-center mb-4">
         <Col>
-          <h3>Assignment {assignment.assignmentNumber?.assignmentNumber}</h3>
+          <h3 className="text-2xl font-bold">Assignment {assignment.assignmentNumber?.assignmentNumber}</h3>
         </Col>
         <Col>
           <Badge pill bg={assignment.status === "Submitted" ? "success" : "info"} style={{ fontSize: "1.1rem" }}>
@@ -131,11 +130,9 @@ const AssignmentView = () => {
       </Row>
       <Form>
         <FormGroup as={Row} className="mb-3" controlId="formAssignmentNumber">
-          <Form.Label column sm="3">
-            Assignment Number:
-          </Form.Label>
+          <Form.Label column sm="3" className="font-semibold">Assignment Number:</Form.Label>
           <Col sm="9">
-          <DropdownButton
+            <DropdownButton
               as={ButtonGroup}
               id="assignmentNumber"
               variant="info"
@@ -152,6 +149,7 @@ const AssignmentView = () => {
                   )
                 )
               }
+              className="w-full"
             >
               {assignmentNumbers.map((item) => (
                 <Dropdown.Item
@@ -165,35 +163,31 @@ const AssignmentView = () => {
           </Col>
         </FormGroup>
         <FormGroup as={Row} className="mb-3" controlId="formGithubUrl">
-          <Form.Label column sm="3">
-            Github URL:
-          </Form.Label>
+          <Form.Label column sm="3" className="font-semibold">Github URL:</Form.Label>
           <Col sm="9">
             <Form.Control
               type="url"
               placeholder="Enter the GitHub URL"
               value={assignment.githubUrl || ""}
               onChange={(e) => updateAssignment("githubUrl", e.target.value)}
+              className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </Col>
         </FormGroup>
         <FormGroup as={Row} className="mb-3" controlId="formBranch">
-          <Form.Label column sm="3">
-            Branch:
-          </Form.Label>
+          <Form.Label column sm="3" className="font-semibold">Branch:</Form.Label>
           <Col sm="9">
             <Form.Control
               type="text"
               placeholder="Enter the branch name"
               value={assignment.branch || ""}
               onChange={(e) => updateAssignment("branch", e.target.value)}
+              className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </Col>
         </FormGroup>
         <FormGroup as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
-          <Form.Label column sm="3">
-            Code Review Video URL:
-          </Form.Label>
+          <Form.Label column sm="3" className="font-semibold">Code Review Video URL:</Form.Label>
           <Col sm="9">
             <Form.Control
               type="url"
@@ -202,13 +196,13 @@ const AssignmentView = () => {
               onChange={(e) =>
                 updateAssignment("codeReviewVideoUrl", e.target.value)
               }
+              className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </Col>
         </FormGroup>
         <Button
           type="button"
-          className="mt-3"
-          variant="primary"
+          className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           onClick={submitUpdatedAssignment}
         >
           Submit Assignment

@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocalStorageState } from "../util/useLocalState";
-import { Form, FormGroup, Button, Alert, Container, Col, Row, DropdownButton, Dropdown } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import {
+  Form,
+  FormGroup,
+  Button,
+  Alert,
+  Container,
+  Col,
+  Row,
+} from "react-bootstrap";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 const CreateAssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
+  const location = useLocation();
+  const nextAssignmentNumber = location.state?.nextAssignmentNumber;
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
     codeReviewVideoUrl: "",
-    assignmentNumber: null,
+    assignmentNumber: nextAssignmentNumber,
     status: "Pending Submission",
   });
   const [error, setError] = useState(null);
@@ -19,7 +29,8 @@ const CreateAssignmentView = () => {
 
   useEffect(() => {
     fetchAssignmentEnums();
-  }, []);
+    console.log("Next assignment number:", nextAssignmentNumber); // Debug log
+  }, [nextAssignmentNumber]);
 
   async function fetchAssignmentEnums() {
     try {
@@ -49,15 +60,15 @@ const CreateAssignmentView = () => {
   }
 
   async function submitNewAssignment() {
-    if (!assignment.assignmentNumber || !assignment.githubUrl || !assignment.branch) {
-      setError("Please fill in all required fields: Assignment Number, Github URL, and Branch.");
+    if (!assignment.githubUrl || !assignment.branch) {
+      setError("Please fill in all required fields: Github URL and Branch.");
       return;
     }
 
     try {
       const assignmentToSubmit = {
         ...assignment,
-        assignmentNumber: parseInt(assignment.assignmentNumber, 10),
+        assignmentNumber: nextAssignmentNumber,
       };
 
       const response = await axios.post(
@@ -79,33 +90,41 @@ const CreateAssignmentView = () => {
       }
     } catch (error) {
       console.error("Error: ", error?.message);
-      setError("Failed to create assignment: " + (error.response?.data?.message || error.message));
+      setError(
+        "Failed to create assignment: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   }
 
+  const currentAssignmentInfo = assignmentNumberEnums.find(
+    (a) => a.assignmentNumber === nextAssignmentNumber
+  );
+
+  if (!nextAssignmentNumber) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <Container className="mt-5">
-      <h3>Create New Assignment</h3>
+    <Container className="mt-5 p-4">
+      <h3 className="mb-4 text-2xl font-bold">Create New Assignment</h3>
       {error && <Alert variant="danger">{error}</Alert>}
-      <Form>
-        <FormGroup as={Row} className="mb-3" controlId="formAssignmentNumber">
-          <Form.Label column sm="3">Assignment Number:*</Form.Label>
+      <Form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <FormGroup as={Row} className="mb-4">
+          <Form.Label column sm="3" className="font-bold">
+            Assignment Number:
+          </Form.Label>
           <Col sm="9">
-            <DropdownButton
-              id="dropdown-assignment-number"
-              title={assignment.assignmentNumber ? `Assignment ${assignment.assignmentNumber}` : "Select Assignment Number"}
-              onSelect={(eventKey) => updateAssignment("assignmentNumber", eventKey)}
-            >
-              {assignmentNumberEnums.map((item) => (
-                <Dropdown.Item key={item.assignmentNumber} eventKey={item.assignmentNumber}>
-                  Assignment {item.assignmentNumber}: {item.name}
-                </Dropdown.Item>
-              ))}
-            </DropdownButton>
+            <div className="py-2 px-3 bg-gray-100 rounded">
+              Assignment {nextAssignmentNumber}:{" "}
+              {currentAssignmentInfo ? currentAssignmentInfo.name : ""}
+            </div>
           </Col>
         </FormGroup>
-        <FormGroup as={Row} className="mb-3" controlId="formGithubUrl">
-          <Form.Label column sm="3">Github URL:*</Form.Label>
+        <FormGroup as={Row} className="mb-4" controlId="formGithubUrl">
+          <Form.Label column sm="3" className="font-bold">
+            Github URL:*
+          </Form.Label>
           <Col sm="9">
             <Form.Control
               type="url"
@@ -113,11 +132,14 @@ const CreateAssignmentView = () => {
               value={assignment.githubUrl || ""}
               onChange={(e) => updateAssignment("githubUrl", e.target.value)}
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </Col>
         </FormGroup>
-        <FormGroup as={Row} className="mb-3" controlId="formBranch">
-          <Form.Label column sm="3">Branch:*</Form.Label>
+        <FormGroup as={Row} className="mb-4" controlId="formBranch">
+          <Form.Label column sm="3" className="font-bold">
+            Branch:*
+          </Form.Label>
           <Col sm="9">
             <Form.Control
               type="text"
@@ -125,28 +147,38 @@ const CreateAssignmentView = () => {
               value={assignment.branch || ""}
               onChange={(e) => updateAssignment("branch", e.target.value)}
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </Col>
         </FormGroup>
-        <FormGroup as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
-          <Form.Label column sm="3">Code Review Video URL:</Form.Label>
+        <FormGroup as={Row} className="mb-4" controlId="formCodeReviewVideoUrl">
+          <Form.Label column sm="3" className="font-bold">
+            Code Review Video URL:
+          </Form.Label>
           <Col sm="9">
             <Form.Control
               type="url"
               placeholder="Enter the code review video URL"
               value={assignment.codeReviewVideoUrl || ""}
-              onChange={(e) => updateAssignment("codeReviewVideoUrl", e.target.value)}
+              onChange={(e) =>
+                updateAssignment("codeReviewVideoUrl", e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </Col>
         </FormGroup>
         <Button
           type="button"
-          className="mt-3"
-          variant="primary"
+          className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           onClick={submitNewAssignment}
         >
           Create Assignment
         </Button>
+        <div className="mt-3">
+          <Link to="/dashboard" color="secondary">
+            Go to dashboard
+          </Link>
+        </div>
       </Form>
     </Container>
   );

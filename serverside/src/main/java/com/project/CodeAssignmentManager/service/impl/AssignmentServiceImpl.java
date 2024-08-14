@@ -4,6 +4,8 @@ import com.project.CodeAssignmentManager.dto.CodeAssignmentCreateDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentListResponseDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentResponseDto;
 import com.project.CodeAssignmentManager.dto.CodeAssignmentUpdateDto;
+import com.project.CodeAssignmentManager.enums.AssignmentStatusEnum;
+import com.project.CodeAssignmentManager.exceptions.InvalidAssignmentOrderException;
 import com.project.CodeAssignmentManager.exceptions.NotFoundException;
 import com.project.CodeAssignmentManager.exceptions.UnauthorizedException;
 import com.project.CodeAssignmentManager.model.CodeAssignment;
@@ -30,13 +32,22 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public CodeAssignmentResponseDto createAssignment(CodeAssignmentCreateDto createDto, User user) {
+        Optional<CodeAssignment> lastAssignment = assignmentRepository.findTopByUserOrderByAssignmentNumberDesc(user);
+
+        int nextAssignmentNumber = lastAssignment.map(assignment -> assignment.getAssignmentNumber().getAssignmentNumber() + 1).orElse(1);
+
+        if (createDto.getAssignmentNumber().getAssignmentNumber() != nextAssignmentNumber) {
+            throw new InvalidAssignmentOrderException("You must complete assignments in order. The next assignment you can submit is " + nextAssignmentNumber);
+        }
+
         CodeAssignment assignment = new CodeAssignment();
-        assignment.setStatus(createDto.getStatus());
+        assignment.setStatus(AssignmentStatusEnum.PENDING_SUBMISSION.getStatus());
         assignment.setGithubUrl(createDto.getGithubUrl());
         assignment.setBranch(createDto.getBranch());
         assignment.setCodeReviewVideoUrl(createDto.getCodeReviewVideoUrl());
         assignment.setAssignmentNumber(createDto.getAssignmentNumber());
         assignment.setUser(user);
+
         CodeAssignment savedAssignment = assignmentRepository.save(assignment);
         return convertToResponseDto(savedAssignment);
     }
