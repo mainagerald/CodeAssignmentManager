@@ -5,6 +5,7 @@ import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
+import Navbar from "./Navbar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +56,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto mt-5 p-4">
+    <div>
+      <Navbar/>
+      <div className="container mx-auto mt-5 p-4">
       <h1 className="text-2xl font-bold mb-2">Assignments Dashboard</h1>
       <button
         type="button"
@@ -107,6 +110,7 @@ const Dashboard = () => {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 };

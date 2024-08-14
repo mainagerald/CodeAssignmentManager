@@ -9,11 +9,15 @@ import AssignmentView from "./components/AssignmentView";
 import CreateAssignmentView from "./components/CreateAssignmentView";
 import PrivateRoute from "./util/PrivateRoutes";
 import "bootstrap/dist/css/bootstrap.min.css";
+import Navbar from "./components/Navbar";
+import Logout from "./components/Logout";
 
 function App() {
   return (
-    <Routes>
+    <div>
+      <Routes>
       <Route path="/" element={<Home />}></Route>
+      <Route path="/logout" element={<Logout/>}></Route>
       <Route
         path="/dashboard"
         element={
@@ -41,6 +45,7 @@ function App() {
       <Route path="/home" element={<Home />}></Route>
       <Route path="/login" element={<Login />}></Route>
     </Routes>
+    </div>
   );
 }
 

@@ -16,6 +16,7 @@ import {
   ButtonGroup,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const AssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
@@ -106,7 +107,7 @@ const AssignmentView = () => {
     return (
       <Container className="d-flex justify-content-center mt-5">
         <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only">loading</span>
         </Spinner>
       </Container>
     );
@@ -117,7 +118,11 @@ const AssignmentView = () => {
   }
 
   return (
-    <Container className="mt-5 p-4 bg-white shadow-md rounded">
+    <div>
+      <div className="justify-content-end mt-1">
+      <Navbar/>
+      </div>
+    <Container className="mt-3 p-4 bg-white shadow-md rounded">
       <Row className="d-flex align-items-center mb-4">
         <Col>
           <h3 className="text-2xl font-bold">Assignment {assignment.assignmentNumber?.assignmentNumber}</h3>
@@ -209,6 +214,7 @@ const AssignmentView = () => {
         </Button>
       </Form>
     </Container>
+    </div>
   );
 };
 

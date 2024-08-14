@@ -11,6 +11,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const CreateAssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
@@ -106,6 +107,8 @@ const CreateAssignmentView = () => {
   }
 
   return (
+    <div>
+      <Navbar/>
     <Container className="mt-5 p-4">
       <h3 className="mb-4 text-2xl font-bold">Create New Assignment</h3>
       {error && <Alert variant="danger">{error}</Alert>}
@@ -181,6 +184,7 @@ const CreateAssignmentView = () => {
         </div>
       </Form>
     </Container>
+    </div>
   );
 };
 
