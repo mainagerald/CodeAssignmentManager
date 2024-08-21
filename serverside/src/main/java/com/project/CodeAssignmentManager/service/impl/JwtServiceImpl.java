@@ -6,21 +6,35 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.slf4j.SLF4JLogger;
+import org.springframework.boot.logging.LoggerGroup;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class JwtServiceImpl implements JwtService {
 
     public String generateToken(UserDetails userDetails){
-        return Jwts.builder().setSubject(userDetails.getUsername())
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", userDetails.getAuthorities()
+                .stream().map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*5*10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
@@ -28,7 +42,7 @@ public class JwtServiceImpl implements JwtService {
     public String generateRefreshToken(Map<String, Object> extraClaim, UserDetails userDetails){
         return Jwts.builder().setClaims(extraClaim).setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
@@ -47,13 +61,30 @@ public class JwtServiceImpl implements JwtService {
         return claimsResolvers.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        try {
+            final String username = extractUsername(token);
+            boolean isValid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+            log.info("Token validation result: {}", isValid);
+            return isValid;
+        } catch (Exception e) {
+            log.error("Error validating token", e);
+            return false;
+        }
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails){
-        final String username=extractUsername(token);
-        return (username.equals(userDetails.getUsername())&& !isTokenExpired(token));
+    private Claims extractAllClaims(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token).getBody();
+            log.debug("Successfully extracted claims from token");
+            return claims;
+        } catch (ExpiredJwtException e) {
+            log.error("Token has expired", e);
+            throw e;
+        } catch (JwtException e) {
+            log.error("Error parsing JWT token", e);
+            throw e;
+        }
     }
 
     private boolean isTokenExpired(String token) {

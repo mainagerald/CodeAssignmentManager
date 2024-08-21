@@ -20,4 +20,7 @@ public class CodeAssignment {
 
     @ManyToOne(optional = false)
     private User user;
+
+    @ManyToOne
+    private User reviewer;
 }

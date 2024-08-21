@@ -21,11 +21,22 @@ public class CodeAssignmentManagerApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		User adminAccount = userRepository.findByRole(Role.ADMIN);
-		if(adminAccount==null){
+		//admin
+//		User adminAccount = userRepository.findByRole(Role.ADMIN);
+//		if(adminAccount==null){
+//			User user = new User();
+//			user.setEmail("Admin@gmail.com");
+//			user.setRole(Role.ADMIN);
+//			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
+//			userRepository.save(user);
+//		}
+
+		//code reviewer
+		User reviewer = userRepository.findByRole(Role.REVIEWER);
+		if(reviewer==null){
 			User user = new User();
-			user.setEmail("Admin@gmail.com");
-			user.setRole(Role.ADMIN);
+			user.setEmail("Rev@gmail.com");
+			user.setRole(Role.REVIEWER);
 			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
 			userRepository.save(user);
 		}

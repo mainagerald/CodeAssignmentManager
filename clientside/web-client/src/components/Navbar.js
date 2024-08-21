@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocalStorageState } from '../util/useLocalState';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [auth, setAuth] = useLocalStorageState("", "jwt");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const logout = () => {
-    setAuth(""); 
-    navigate("/login"); 
-  };
+  function logout() {
+      console.log("Triggered logout");
+      setAuth("");
+      setIsLoggingOut(true);
+  }
+
+  useEffect(() => {
+      if (isLoggingOut) {
+          const token = localStorage.getItem("jwt");
+          console.log("JWT token in local storage after logout:", token);
+          navigate("/login");
+      }
+  }, [isLoggingOut, navigate]);
 
   return (
     <nav className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-4 shadow-md">

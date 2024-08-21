@@ -32,10 +32,10 @@ public class SecurityConfiguration {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request->request.requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/**").hasAnyAuthority(Role.ADMIN.name())
+                        .requestMatchers("/api/**").hasAnyAuthority(Role.ADMIN.name(), Role.REVIEWER.name())
                         .requestMatchers("/api/user").hasAnyAuthority(Role.USER.name())
                         .anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults())
+//                .formLogin(Customizer.withDefaults())
 //                .oauth2Login(Customizer.withDefaults())
                 .sessionManagement(manager->manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(

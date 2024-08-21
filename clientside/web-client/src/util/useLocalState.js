@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 
-function useLocalStorageState(defaultValue, key){
-    const [value, setValue] = useState(()=>{
-        const localStorageValue = localStorage.getItem(key);
-        // console.log(`local storage key ${key} value is: ${localStorageValue}`);
-        return localStorageValue != null ? JSON.parse(localStorageValue) : defaultValue;
-    })
+function useLocalStorageState(defaultValue, key) {
+  const [value, setValue] = useState(() => {
+    const storedValue = localStorage.getItem(key);
+    return storedValue !== null ? JSON.parse(storedValue) : defaultValue;
+  });
 
-    useEffect(()=>{
-        localStorage.setItem(key, JSON.stringify(value));
-        // console.log(`local key ${key} value is: ${value}`);
-    }, [key, value]);
+  useEffect(() => {
+    if (value === null || value === undefined || value === "") {
+      console.log(`Removing item from localStorage for key: ${key}`);
+      localStorage.removeItem(key);
+    } else {
+      console.log(`Setting localStorage for key: ${key}, value: ${JSON.stringify(value)}`);
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  }, [key, value]);
 
-    return [value, setValue];
+  const removeItem = () => {
+    setValue(null);
+    localStorage.clear();
+  };
+
+  return [value, setValue];
 }
 
-export {useLocalStorageState};
+export { useLocalStorageState };

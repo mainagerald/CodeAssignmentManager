@@ -1,9 +1,6 @@
 package com.project.CodeAssignmentManager.service;
 
-import com.project.CodeAssignmentManager.dto.CodeAssignmentCreateDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentListResponseDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentResponseDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentUpdateDto;
+import com.project.CodeAssignmentManager.dto.*;
 import com.project.CodeAssignmentManager.model.User;
 
 import java.util.List;
@@ -15,4 +12,5 @@ public interface AssignmentService {
     List<CodeAssignmentListResponseDto> findByUser(User user);
     Optional<CodeAssignmentResponseDto> findById(Long id);
     CodeAssignmentResponseDto updateAssignment(Long id, CodeAssignmentUpdateDto codeAssignmentDto, User user);
+    CodeAssignmentClaimResponseDto claimAssignment(Long id, User reviewer);
 }

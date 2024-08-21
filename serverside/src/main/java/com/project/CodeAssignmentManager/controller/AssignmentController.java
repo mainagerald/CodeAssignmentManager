@@ -41,12 +41,22 @@ public class AssignmentController {
     @PutMapping("update/{id}")
     public ResponseEntity<CodeAssignmentResponseDto> updateAssignment(
             @PathVariable Long id,
-//            @Valid
             @RequestBody CodeAssignmentUpdateDto codeAssignmentDto,
             @AuthenticationPrincipal User user) {
         CodeAssignmentResponseDto updatedAssignment = assignmentService.updateAssignment(id, codeAssignmentDto, user);
         return ResponseEntity.ok(updatedAssignment);
     }
+    @PutMapping("/claim/{id}")
+    public ResponseEntity<CodeAssignmentClaimResponseDto> claimAssignment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User reviewer
+    ) {
+        // TODO: throw custom exceptions
+        CodeAssignmentClaimResponseDto claimedAssignment = assignmentService.claimAssignment(id, reviewer);
+        return ResponseEntity.ok(claimedAssignment);
+    }
+
+
     @GetMapping("/enums")
     public ResponseEntity<CodeAssignmentEnumsDto> getEnums(@AuthenticationPrincipal User user){
         CodeAssignmentEnumsDto dto = new CodeAssignmentEnumsDto(

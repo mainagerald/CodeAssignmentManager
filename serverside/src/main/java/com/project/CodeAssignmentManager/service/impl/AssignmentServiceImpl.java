@@ -1,10 +1,9 @@
 package com.project.CodeAssignmentManager.service.impl;
 
-import com.project.CodeAssignmentManager.dto.CodeAssignmentCreateDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentListResponseDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentResponseDto;
-import com.project.CodeAssignmentManager.dto.CodeAssignmentUpdateDto;
+import com.project.CodeAssignmentManager.dto.*;
 import com.project.CodeAssignmentManager.enums.AssignmentStatusEnum;
+import com.project.CodeAssignmentManager.enums.AuthoritiesEnum;
+import com.project.CodeAssignmentManager.exceptions.AssignmentClaimedException;
 import com.project.CodeAssignmentManager.exceptions.InvalidAssignmentOrderException;
 import com.project.CodeAssignmentManager.exceptions.NotFoundException;
 import com.project.CodeAssignmentManager.exceptions.UnauthorizedException;
@@ -14,12 +13,14 @@ import com.project.CodeAssignmentManager.repository.AssignmentRepository;
 import com.project.CodeAssignmentManager.service.AssignmentService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 
-import java.io.FileNotFoundException;
-import java.net.http.HttpResponse;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AssignmentServiceImpl implements AssignmentService {
+    private static final Logger log = LoggerFactory.getLogger(AssignmentServiceImpl.class);
     @Autowired
     private final AssignmentRepository assignmentRepository;
     @Override
@@ -54,9 +56,19 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public List<CodeAssignmentListResponseDto> findByUser(User user) {
-        return assignmentRepository.findByUser(user).stream()
-                .map(this::convertToListResponseDto)
-                .collect(Collectors.toList());
+        boolean isReviewer = user.getAuthorities().stream().anyMatch(auth -> AuthoritiesEnum.REVIEWER.name()
+                .equals(auth.getAuthority()));
+        log.info("boolean reviewer: {}", isReviewer);
+        if(isReviewer){
+            return assignmentRepository.findByReviewer(user).stream()
+                    .map(this::convertToListResponseDto)
+                    .collect(Collectors.toList());
+        } else{
+            return assignmentRepository.findByUser(user).stream()
+                    .map(this::convertToListResponseDto)
+                    .collect(Collectors.toList());
+        }
+
     }
 
     @Override
@@ -76,6 +88,27 @@ public class AssignmentServiceImpl implements AssignmentService {
                     return convertToResponseDto(assignmentRepository.save(existingAssignment));
                 })
                 .orElseThrow(() -> new NotFoundException("Assignment with the given id not found"));
+    }
+
+    @Override
+    @Transactional
+    public CodeAssignmentClaimResponseDto claimAssignment(Long id, User reviewer) {
+        CodeAssignment assignment = assignmentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Assignment not found"));
+
+        // already claimed
+        if (assignment.getReviewer() != null) {
+            throw new IllegalStateException("Assignment already claimed by another reviewer");
+        }
+
+        if (!reviewer.getRole().name().equals("REVIEWER")) {
+            throw new UnauthorizedException("User does not have permission to claim this assignment");
+        }
+        assignment.setReviewer(reviewer);
+        assignment.setStatus(AssignmentStatusEnum.IN_REVIEW.getStatus());
+        assignmentRepository.save(assignment);
+
+        return mapToClaimResponseDto(assignment);
     }
 
     private CodeAssignmentResponseDto convertToResponseDto(CodeAssignment assignment) {
@@ -109,5 +142,16 @@ public class AssignmentServiceImpl implements AssignmentService {
 //        if (dto.getAssignmentNumber() != null) {
 //            assignment.setAssignmentNumber(dto.getAssignmentNumber());
 //        }
+    }
+    private CodeAssignmentClaimResponseDto mapToClaimResponseDto(CodeAssignment assignment) {
+        return new CodeAssignmentClaimResponseDto(
+                assignment.getId(),
+                assignment.getStatus(),
+                assignment.getGithubUrl(),
+                assignment.getBranch(),
+                assignment.getCodeReviewVideoUrl(),
+                assignment.getAssignmentNumber(),
+                new ReviewerDto(assignment.getReviewer().getId(), assignment.getReviewer().getEmail())
+        );
     }
 }
