@@ -30,7 +30,7 @@ const CreateAssignmentView = () => {
 
   useEffect(() => {
     fetchAssignmentEnums();
-    console.log("Next assignment number:", nextAssignmentNumber); // Debug log
+    console.log("Next assignment number:", nextAssignmentNumber);
   }, [nextAssignmentNumber]);
 
   async function fetchAssignmentEnums() {
@@ -69,9 +69,10 @@ const CreateAssignmentView = () => {
     try {
       const assignmentToSubmit = {
         ...assignment,
-        assignmentNumber: nextAssignmentNumber,
+        assignmentNumber: nextAssignmentNumber-1,
       };
 
+      
       const response = await axios.post(
         "http://localhost:8888/api/assignments/create",
         assignmentToSubmit,
@@ -87,7 +88,7 @@ const CreateAssignmentView = () => {
 
       if (response.status === 201) {
         alert("Assignment created successfully!");
-        navigate(`/assignments/${response.data.id}`);
+        navigate(`/dashboard`);
       }
     } catch (error) {
       console.error("Error: ", error?.message);
@@ -108,7 +109,6 @@ const CreateAssignmentView = () => {
 
   return (
     <div>
-      <Navbar/>
     <Container className="mt-5 p-4">
       <h3 className="mb-4 text-2xl font-bold">Create New Assignment</h3>
       {error && <Alert variant="danger">{error}</Alert>}
@@ -150,22 +150,6 @@ const CreateAssignmentView = () => {
               value={assignment.branch || ""}
               onChange={(e) => updateAssignment("branch", e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </Col>
-        </FormGroup>
-        <FormGroup as={Row} className="mb-4" controlId="formCodeReviewVideoUrl">
-          <Form.Label column sm="3" className="font-bold">
-            Code Review Video URL:
-          </Form.Label>
-          <Col sm="9">
-            <Form.Control
-              type="url"
-              placeholder="Enter the code review video URL"
-              value={assignment.codeReviewVideoUrl || ""}
-              onChange={(e) =>
-                updateAssignment("codeReviewVideoUrl", e.target.value)
-              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </Col>

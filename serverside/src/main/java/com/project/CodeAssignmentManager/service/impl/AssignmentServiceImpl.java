@@ -39,6 +39,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         int nextAssignmentNumber = lastAssignment.map(assignment -> assignment.getAssignmentNumber().getAssignmentNumber() + 1).orElse(1);
 
         if (createDto.getAssignmentNumber().getAssignmentNumber() != nextAssignmentNumber) {
+            log.info("trying number: {}", createDto);
             throw new InvalidAssignmentOrderException("You must complete assignments in order. The next assignment you can submit is " + nextAssignmentNumber);
         }
 
@@ -83,6 +84,24 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .map(existingAssignment -> {
                     if (!existingAssignment.getUser().getId().equals(user.getId())) {
                         throw new UnauthorizedException("Unauthorized user");
+                    }
+                    if(existingAssignment.getReviewer()!=null && existingAssignment.getReviewer().getId().equals(user.getId())){
+                        existingAssignment.setCodeReviewVideoUrl(codeAssignmentDto.getCodeReviewVideoUrl());
+                    }
+                    updateAssignmentFromDto(existingAssignment, codeAssignmentDto);
+                    return convertToResponseDto(assignmentRepository.save(existingAssignment));
+                })
+                .orElseThrow(() -> new NotFoundException("Assignment with the given id not found"));
+    }
+    @Override
+    @Transactional
+    public CodeAssignmentResponseDto reviewAssignment(Long id, CodeAssignmentUpdateDto codeAssignmentDto, User user) {
+        return assignmentRepository.findById(id)
+                .map(existingAssignment -> {
+                    if(existingAssignment.getReviewer()!=null && existingAssignment.getReviewer().getId().equals(user.getId())){
+                        existingAssignment.setCodeReviewVideoUrl(codeAssignmentDto.getCodeReviewVideoUrl());
+                    } else{
+                        throw new UnauthorizedException("Unauthorized review");
                     }
                     updateAssignmentFromDto(existingAssignment, codeAssignmentDto);
                     return convertToResponseDto(assignmentRepository.save(existingAssignment));
@@ -138,7 +157,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setStatus(dto.getStatus());
         assignment.setBranch(dto.getBranch());
         assignment.setGithubUrl(dto.getGithubUrl());
-        assignment.setCodeReviewVideoUrl(dto.getCodeReviewVideoUrl());
+//        assignment.setCodeReviewVideoUrl(dto.getCodeReviewVideoUrl());
 //        if (dto.getAssignmentNumber() != null) {
 //            assignment.setAssignmentNumber(dto.getAssignmentNumber());
 //        }

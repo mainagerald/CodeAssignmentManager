@@ -16,7 +16,6 @@ const ReviewerDashboard = () => {
 
   useEffect(() => {
     console.log("fetching assignments");
-
     getAvailableAssignments();
   }, []);
 
@@ -55,7 +54,6 @@ const ReviewerDashboard = () => {
         }
       );
       if (response.status === 200) {
-        // Todo: use enums for status
         setAssignments((prevAssignments) =>
           prevAssignments.map((assignment) =>
             assignment.id === assignmentId
@@ -68,11 +66,11 @@ const ReviewerDashboard = () => {
           )
         );
         alert("Assignment claimed successfully!");
+        getAvailableAssignments();
       }
     } catch (error) {
       alert(
-        "Failed to claim assignment: " + error.response?.data?.message ||
-          error.message
+        "Failed to claim assignment: " + (error.response?.data?.message || error.message)
       );
       console.error(error);
     }
@@ -81,126 +79,83 @@ const ReviewerDashboard = () => {
   if (loading) return <Spinner />;
   if (error) return <div className="text-center text-red-500">{error}</div>;
 
+  const renderAssignments = (status) => {
+    const filteredAssignments = assignments.filter((assignment) => assignment.status === status);
+    return filteredAssignments.length === 0 ? (
+      <div className="text-center text-gray-500">No assignments available.</div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredAssignments.map((assignment) => (
+          <Card
+            key={assignment.id}
+            className="shadow-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-blue-400 to-indigo-400 text-white"
+          >
+            <Card.Body className="flex flex-col">
+              <Card.Title className="text-lg font-semibold">
+                Assignment {assignment.assignmentNumber.assignmentNumber}
+              </Card.Title>
+              <div className="d-flex align-items-start mb-2 mt-1">
+                <Badge
+                  pill
+                  className={`text-white ${
+                    assignment.status === "Submitted" ? "bg-success"
+                    : assignment.status === "In review" ? "bg-warning"
+                    : assignment.status === "Completed" ? "bg-info"
+                    : "bg-secondary"
+                  }`}
+                  style={{ fontSize: "1em", padding: "0.5em 1em" }}
+                >
+                  {assignment.status}
+                </Badge>
+              </div>
+              <Card.Text className="text-sm">
+                <strong>Github URL:</strong> {assignment.githubUrl}
+              </Card.Text>
+              <Card.Text className="text-sm">
+                <strong>Branch:</strong> {assignment.branch}
+              </Card.Text>
+              <div className="mt-auto">
+                <Button
+                  className="w-full"
+                  variant="light"
+                  onClick={() => {
+                    status === "Submitted"
+                      ? claimAssignment(assignment.id)
+                      : navigate(`/assignments/${assignment.id}`);
+                  }}
+                  disabled={status === "Completed" ? true : false}
+                >
+                  {status === "Submitted" ? "Claim Assignment" 
+                  : status === "In review" ? "Assess"
+                  : status === "Pending Submission" ? "Submit"
+                  : "Done"}
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div>
-      <Navbar />
       <div className="container mx-auto mt-5 p-4">
         <h1 className="text-2xl font-bold mb-2">Reviewer Dashboard</h1>
-        <div className="assignments-submitted border-2 border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
+
+        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
           <h3>Awaiting Review</h3>
-          {assignments?.length === 0 && !assignments.filter((assignment) => assignment.status === "Submitted").count>0 ? (
-            <div className="text-center text-gray-500">
-              No assignments available.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {assignments
-                .filter((assignment) => assignment.status === "Submitted")
-                .map((assignment) => (
-                  <Card
-                    key={assignment.id}
-                    className="shadow-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-blue-400 to-indigo-400 text-white"
-                  >
-                    <Card.Body className="flex flex-col">
-                      <Card.Title className="text-lg font-semibold">
-                        Assignment{" "}
-                        {assignment.assignmentNumber.assignmentNumber}
-                      </Card.Title>
-                      <div className="d-flex align-items-start mb-2 mt-1">
-                        <Badge
-                          pill
-                          className={`text-white ${
-                            assignment.status === "Submitted"
-                              ? "bg-green-500"
-                              : "bg-yellow-500"
-                          }`}
-                          style={{ fontSize: "1em", padding: "0.5em 1em" }}
-                        >
-                          {assignment.status}
-                        </Badge>
-                      </div>
-                      <Card.Text className="text-sm">
-                        <strong>Github URL:</strong> {assignment.githubUrl}
-                      </Card.Text>
-                      <Card.Text className="text-sm">
-                        <strong>Branch:</strong> {assignment.branch}
-                      </Card.Text>
-                      <div className="mt-auto">
-                        <Button
-                          className="w-full"
-                          variant="light"
-                          onClick={() => claimAssignment(assignment.id)}
-                          disabled={assignment.status !== "Submitted"}
-                        >
-                          {assignment.status === "Submitted"
-                            ? "Claim Assignment"
-                            : "Already Claimed"}
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                ))}
-            </div>
-          )}
+          {renderAssignments("Submitted")}
         </div>
 
-        <div className="assignments-in-review border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
-          <h3 className="mt-2">In Review</h3>
-          {assignments?.length === 0 && !assignments.filter((assignment) => assignment.status === "In review").count>0 ? 
-          (
-            <div className="text-center text-gray-500">
-              No assignments available.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {assignments
-                .filter((assignment) => assignment.status === "In review")
-                .map((assignment) => (
-                  <Card
-                    key={assignment.id}
-                    className="shadow-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-blue-400 to-indigo-400 text-white"
-                  >
-                    <Card.Body className="flex flex-col">
-                      <Card.Title className="text-lg font-semibold">
-                        Assignment{" "}
-                        {assignment.assignmentNumber.assignmentNumber}
-                      </Card.Title>
-                      <div className="d-flex align-items-start mb-2 mt-1">
-                        <Badge
-                          pill
-                          className={`text-white ${
-                            assignment.status === "Submitted"
-                              ? "bg-green-500"
-                              : "bg-yellow-500"
-                          }`}
-                          style={{ fontSize: "1em", padding: "0.5em 1em" }}
-                        >
-                          {assignment.status}
-                        </Badge>
-                      </div>
-                      <Card.Text className="text-sm">
-                        <strong>Github URL:</strong> {assignment.githubUrl}
-                      </Card.Text>
-                      <Card.Text className="text-sm">
-                        <strong>Branch:</strong> {assignment.branch}
-                      </Card.Text>
-                      <div className="mt-auto">
-                        <Button
-                          className="w-full"
-                          variant="light"
-                          onClick={() => claimAssignment(assignment.id)}
-                          disabled={assignment.status !== "Submitted"}
-                        >
-                          {assignment.status === "Submitted"
-                            ? "Claim Assignment"
-                            : "Already Claimed"}
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                ))}
-            </div>
-          )}
+        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
+          <h3>In Review</h3>
+          {renderAssignments("In review")}
+        </div>
+
+        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
+          <h3>Completed</h3>
+          {renderAssignments("Completed")}
         </div>
       </div>
     </div>

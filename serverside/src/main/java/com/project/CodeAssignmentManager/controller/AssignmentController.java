@@ -55,6 +55,15 @@ public class AssignmentController {
         CodeAssignmentClaimResponseDto claimedAssignment = assignmentService.claimAssignment(id, reviewer);
         return ResponseEntity.ok(claimedAssignment);
     }
+    @PutMapping("/review/{id}")
+    public ResponseEntity<CodeAssignmentResponseDto> reviewAssignment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User reviewer,
+            @RequestBody CodeAssignmentUpdateDto codeAssignmentUpdateDto
+    ){
+        CodeAssignmentResponseDto reviewedAssignment = assignmentService.reviewAssignment(id, codeAssignmentUpdateDto, reviewer);
+        return ResponseEntity.ok(reviewedAssignment);
+    }
 
 
     @GetMapping("/enums")

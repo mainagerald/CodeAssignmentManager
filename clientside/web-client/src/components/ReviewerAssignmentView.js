@@ -17,8 +17,10 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { BaseUrl } from "../api/Service";
 
-const AssignmentView = () => {
+
+const ReviewerAssignmentView = () => {
   const [auth] = useLocalStorageState("", "jwt");
   const [assignment, setAssignment] = useState({
     branch: "",
@@ -47,7 +49,7 @@ const AssignmentView = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8888/api/assignments/getById/${assignmentId}`,
+        `${BaseUrl}/assignments/getById/${assignmentId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -69,23 +71,22 @@ const AssignmentView = () => {
     }
   }
 
-  function updateAssignment(prop, value) {
-    setAssignment((prevAssignment) => ({
-      ...prevAssignment,
-      [prop]: value,
-    }));
+  function reviewedAssignment(prop, value) {
+    setAssignment((prevAssignment) =>({
+        ...prevAssignment,
+        [prop]: value,
+       }));
   }
 
-  async function submitUpdatedAssignment() {
+  async function reviewAssignment() {
     try {
-      const updatedAssignment = {
-        ...assignment,
-        status: "Submitted",
-      };
-
-      const updatedAssignmentResponse = await axios.put(
-        `http://localhost:8888/api/assignments/update/${assignmentId}`,
-        updatedAssignment,
+        const revAssignment = {
+            ...assignment,
+            status: "Completed"
+        }
+      const response = await axios.put(
+        `${BaseUrl}/assignments/review/${assignment.id}`,
+        revAssignment,
         {
           headers: {
             "Content-Type": "application/json",
@@ -93,16 +94,19 @@ const AssignmentView = () => {
           },
         }
       );
-      if (updatedAssignmentResponse.status === 200) {
-        setAssignment(updatedAssignmentResponse.data);
-        alert("Assignment updated and submitted successfully!");
+      if (response.status === 200) {
+        setAssignment(response.data);
+        alert("ASSIGNMENT REVIEW COMPLETED!");
+        navigate("/dashboard")
       }
     } catch (error) {
-      console.error("Error: ", error?.message);
-      setError("Failed to update assignment.");
+      alert(
+        "FAILED TO REVIEW ASSIGNMENT: " + error.response?.data?.message ||
+          error.message
+      );
+      console.error(error);
     }
   }
-
   if (loading) {
     return (
       <Container className="d-flex justify-content-center mt-5">
@@ -119,62 +123,28 @@ const AssignmentView = () => {
 
   return (
     <div>
-      <div className="justify-content-end mt-1">
-      </div>
     <Container className="mt-3 p-4 bg-white shadow-md rounded">
       <Row className="d-flex align-items-center mb-4">
         <Col>
           <h3 className="text-2xl font-bold">Assignment {assignment.assignmentNumber?.assignmentNumber}</h3>
         </Col>
         <Col>
-          <Badge pill bg={assignment.status === "Submitted" ? "success" : "info"} style={{ fontSize: "1.1rem" }}>
+          <Badge pill bg={assignment.status === "Completed" ? "success" : "info"} style={{ fontSize: "1.1rem" }}>
             {assignment.status}
           </Badge>
         </Col>
       </Row>
       <Form>
-        <FormGroup as={Row} className="mb-3" controlId="formAssignmentNumber">
-          <Form.Label column sm="3" className="font-semibold">Assignment Number:</Form.Label>
-          <Col sm="9">
-            <DropdownButton
-              as={ButtonGroup}
-              id="assignmentNumber"
-              variant="info"
-              title={
-                assignment.assignmentNumber
-                  ? `Assignment ${assignment.assignmentNumber.assignmentNumber}`
-                  : "Select Assignment"
-              }
-              onSelect={(eventKey) =>
-                updateAssignment(
-                  "assignmentNumber",
-                  assignmentNumbers.find(
-                    (item) => item.assignmentNumber === parseInt(eventKey)
-                  )
-                )
-              }
-              className="w-full"
-            >
-              {assignmentNumbers.map((item) => (
-                <Dropdown.Item
-                  key={item.assignmentNumber}
-                  eventKey={item.assignmentNumber}
-                >
-                  Assignment {item.assignmentNumber}: {item.name}
-                </Dropdown.Item>
-              ))}
-            </DropdownButton>
-          </Col>
-        </FormGroup>
         <FormGroup as={Row} className="mb-3" controlId="formGithubUrl">
           <Form.Label column sm="3" className="font-semibold">Github URL:</Form.Label>
           <Col sm="9">
             <Form.Control
               type="url"
+              readOnly
               placeholder="Enter the GitHub URL"
               value={assignment.githubUrl || ""}
-              onChange={(e) => updateAssignment("githubUrl", e.target.value)}
-              className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              onChange={(e) => reviewedAssignment("githubUrl", e.target.value)}
+              className="border border-gray-300 bg-yellow rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </Col>
         </FormGroup>
@@ -183,9 +153,24 @@ const AssignmentView = () => {
           <Col sm="9">
             <Form.Control
               type="text"
+              readOnly
               placeholder="Enter the branch name"
               value={assignment.branch || ""}
-              onChange={(e) => updateAssignment("branch", e.target.value)}
+              onChange={(e) => reviewedAssignment("branch", e.target.value)}
+              className="border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </Col>
+        </FormGroup>
+        <FormGroup as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
+          <Form.Label column sm="3" className="font-semibold">Review Video URL:</Form.Label>
+          <Col sm="9">
+            <Form.Control
+              type="url"
+              placeholder="https://teams-setter.com/review"
+              value={assignment.codeReviewVideoUrl || ""}
+              onChange={(e) =>
+                reviewedAssignment("codeReviewVideoUrl", e.target.value)
+              }
               className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </Col>
@@ -193,9 +178,9 @@ const AssignmentView = () => {
         <Button
           type="button"
           className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          onClick={submitUpdatedAssignment}
+          onClick={reviewAssignment}
         >
-          Submit Assignment
+          Complete Assignment Review
         </Button>
       </Form>
     </Container>
@@ -203,4 +188,4 @@ const AssignmentView = () => {
   );
 };
 
-export default AssignmentView;
+export default ReviewerAssignmentView

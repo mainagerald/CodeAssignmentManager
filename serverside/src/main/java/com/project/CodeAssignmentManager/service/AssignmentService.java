@@ -13,4 +13,5 @@ public interface AssignmentService {
     Optional<CodeAssignmentResponseDto> findById(Long id);
     CodeAssignmentResponseDto updateAssignment(Long id, CodeAssignmentUpdateDto codeAssignmentDto, User user);
     CodeAssignmentClaimResponseDto claimAssignment(Long id, User reviewer);
+    CodeAssignmentResponseDto reviewAssignment(Long id, CodeAssignmentUpdateDto codeAssignmentDto, User user);
 }

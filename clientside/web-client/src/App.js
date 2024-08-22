@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import "./index.css";
 import { Routes, Route } from "react-router-dom";
@@ -12,46 +12,40 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Logout from "./components/Logout";
 import { useLocalStorageState } from "./util/useLocalState";
 import { jwtDecode } from "jwt-decode";
+import Navbar from "./components/Navbar";
 import ReviewerDashboard from "./components/ReviewerDashboard";
+import ReviewerAssignmentView from "./components/ReviewerAssignmentView";
 
 function App() {
   const [jwt] = useLocalStorageState("", "jwt");
-  const [role, setRole] = useState(getRole());
+  const [role, setRole] = useState("");
 
-  function getRole() {
+  useEffect(()=> {
     if (jwt) {
       var decodedToken = jwtDecode(jwt);
       var role = decodedToken.authorities[0];
-      console.log(role);
-      return role;
+      setRole(role);
     }
-    setRole(role);
-  }
-  
+  }, [jwt]);
+
   return (
     <div>
       <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/logout" element={<Logout/>}></Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/logout" element={<Logout />} />
         <Route
           path="/dashboard"
           element={
-            role == "REVIEWER" ? (
-              <PrivateRoute>
-                <ReviewerDashboard />
-              </PrivateRoute>
-            ) : (
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            )
+            <PrivateRoute>
+              {role === "REVIEWER" ? <ReviewerDashboard /> : <Dashboard />}
+            </PrivateRoute>
           }
         />
         <Route
           path="/assignments/:id"
           element={
             <PrivateRoute>
-              <AssignmentView />
+              {role === "REVIEWER" ? <ReviewerAssignmentView /> : <AssignmentView />}
             </PrivateRoute>
           }
         />
@@ -63,8 +57,8 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route path="/home" element={<Home />}></Route>
-        <Route path="/login" element={<Login />}></Route>
+        <Route path="/home" element={<Home />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </div>
   );

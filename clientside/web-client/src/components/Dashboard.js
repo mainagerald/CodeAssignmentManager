@@ -58,7 +58,6 @@ const Dashboard = () => {
 
   return (
     <div>
-      <Navbar/>
       <div className="container mx-auto mt-5 p-4">
       <h1 className="text-2xl font-bold mb-2">Assignments Dashboard</h1>
       <button
@@ -83,7 +82,12 @@ const Dashboard = () => {
                 <div className="d-flex align-items-start mb-2 mt-1">
                   <Badge
                     pill
-                    className={`text-white ${assignment.status === "Submitted" ? "bg-green-500" : "bg-yellow-500"}`}
+                    className={`text-white ${
+                      assignment.status === "Submitted" ? "bg-success"
+                      : assignment.status === "In review" ? "bg-warning"
+                      : assignment.status === "Completed" ? "bg-info"
+                      : "bg-secondary"
+                    }`}                    
                     style={{ fontSize: "1em", padding: "0.5em 1em" }}
                   >
                     {assignment.status}
