@@ -5,7 +5,8 @@ import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
-import Navbar from "./Navbar";
+import StatusBadge from "../util/StatusBadge";
+
 
 const ReviewerDashboard = () => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ const ReviewerDashboard = () => {
             assignment.id === assignmentId
               ? {
                   ...assignment,
-                  status: "In Review",
+                  status: "In review",
                   reviewer: response.data.reviewer,
                 }
               : assignment
@@ -95,18 +96,7 @@ const ReviewerDashboard = () => {
                 Assignment {assignment.assignmentNumber.assignmentNumber}
               </Card.Title>
               <div className="d-flex align-items-start mb-2 mt-1">
-                <Badge
-                  pill
-                  className={`text-white ${
-                    assignment.status === "Submitted" ? "bg-success"
-                    : assignment.status === "In review" ? "bg-warning"
-                    : assignment.status === "Completed" ? "bg-info"
-                    : "bg-secondary"
-                  }`}
-                  style={{ fontSize: "1em", padding: "0.5em 1em" }}
-                >
-                  {assignment.status}
-                </Badge>
+              <StatusBadge text={assignment.status}/>
               </div>
               <Card.Text className="text-sm">
                 <strong>Github URL:</strong> {assignment.githubUrl}
@@ -123,12 +113,14 @@ const ReviewerDashboard = () => {
                       ? claimAssignment(assignment.id)
                       : navigate(`/assignments/${assignment.id}`);
                   }}
-                  disabled={status === "Completed" ? true : false}
+                  // disabled={status === "Completed" ? true : false}
                 >
                   {status === "Submitted" ? "Claim Assignment" 
                   : status === "In review" ? "Assess"
                   : status === "Pending Submission" ? "Submit"
-                  : "Done"}
+                  :status ==="Needs update" ? "View"
+                  : status === "Completed" ? "View"
+                  : ""}
                 </Button>
               </div>
             </Card.Body>
@@ -152,7 +144,10 @@ const ReviewerDashboard = () => {
           <h3>In Review</h3>
           {renderAssignments("In review")}
         </div>
-
+        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
+          <h3>Needs Update</h3>
+          {renderAssignments("Needs update")}
+        </div>
         <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
           <h3>Completed</h3>
           {renderAssignments("Completed")}

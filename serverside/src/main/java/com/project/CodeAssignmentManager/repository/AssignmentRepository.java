@@ -14,7 +14,7 @@ public interface AssignmentRepository extends JpaRepository<CodeAssignment, Long
     List<CodeAssignment> findByUser(User user);
     Optional<CodeAssignment> findTopByUserOrderByAssignmentNumberDesc(User user);
     @Query("select a from CodeAssignment a "
-            + "where a.status = 'submitted' "
+            + "where (a.status = 'submitted' and (a.reviewer is null or a.reviewer = :reviewer))"
             +"or a.reviewer = :reviewer ")
     List<CodeAssignment> findByReviewer(User reviewer);
 }

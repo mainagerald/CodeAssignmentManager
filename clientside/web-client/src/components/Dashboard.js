@@ -5,7 +5,7 @@ import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
-import Navbar from "./Navbar";
+import StatusBadge from "../util/StatusBadge";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -80,18 +80,7 @@ const Dashboard = () => {
               <Card.Body className="flex flex-col">
                 <Card.Title className="text-lg font-semibold">Assignment {assignment.assignmentNumber.assignmentNumber}</Card.Title>
                 <div className="d-flex align-items-start mb-2 mt-1">
-                  <Badge
-                    pill
-                    className={`text-white ${
-                      assignment.status === "Submitted" ? "bg-success"
-                      : assignment.status === "In review" ? "bg-warning"
-                      : assignment.status === "Completed" ? "bg-info"
-                      : "bg-secondary"
-                    }`}                    
-                    style={{ fontSize: "1em", padding: "0.5em 1em" }}
-                  >
-                    {assignment.status}
-                  </Badge>
+                <StatusBadge text={assignment.status}/>
                 </div>
                 <Card.Text className="text-sm">
                   <strong>Github URL:</strong> {assignment.githubUrl}

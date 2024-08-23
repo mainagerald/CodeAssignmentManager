@@ -8,7 +8,8 @@ public enum AssignmentStatusEnum {
     SUBMITTED("Submitted", 2),
     IN_REVIEW("In review", 3),
     NEEDS_UPDATE("Needs update", 4),
-    COMPLETED("Completed", 5);
+    COMPLETED("Completed", 5),
+    RESUBMITTED("Resubmitted", 6);
 
     private final String status;
     private final Integer step;

@@ -35,7 +35,7 @@ public class CodeAssignmentManagerApplication implements CommandLineRunner {
 		User reviewer = userRepository.findByRole(Role.REVIEWER);
 		if(reviewer==null){
 			User user = new User();
-			user.setEmail("Rev@gmail.com");
+			user.setEmail("Rev2@gmail.com");
 			user.setRole(Role.REVIEWER);
 			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
 			userRepository.save(user);
