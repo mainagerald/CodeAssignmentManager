@@ -6,11 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
-
+import { getAssignments, putClaimAssignment } from "../api/Service";
 
 const ReviewerDashboard = () => {
   const navigate = useNavigate();
-  const {jwt} = useAuth();
+  const { jwt, logout } = useAuth();
   const [assignments, setAssignments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,19 +23,18 @@ const ReviewerDashboard = () => {
   async function getAvailableAssignments() {
     try {
       setLoading(true);
-      const response = await axios.get(`${BaseUrl}/assignments/fetch`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
-      console.log("res-->", response);
-
+      const response = await getAssignments(jwt);
       if (response.status === 200) {
         setAssignments(response.data);
       }
     } catch (error) {
-      setError("Failed to fetch assignments!");
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      } else {
+        alert("Failed to fetch assignments!");
+      }
       console.error(error);
     } finally {
       setLoading(false);
@@ -44,16 +43,7 @@ const ReviewerDashboard = () => {
 
   async function claimAssignment(assignmentId) {
     try {
-      const response = await axios.put(
-        `${BaseUrl}/assignments/claim/${assignmentId}`,
-        {},
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
+      const response = await putClaimAssignment(assignmentId, jwt);
       if (response.status === 200) {
         setAssignments((prevAssignments) =>
           prevAssignments.map((assignment) =>
@@ -71,7 +61,8 @@ const ReviewerDashboard = () => {
       }
     } catch (error) {
       alert(
-        "Failed to claim assignment: " + (error.response?.data?.message || error.message)
+        "Failed to claim assignment: " +
+          (error.response?.data?.message || error.message)
       );
       console.error(error);
     }
@@ -81,7 +72,9 @@ const ReviewerDashboard = () => {
   if (error) return <div className="text-center text-red-500">{error}</div>;
 
   const renderAssignments = (status) => {
-    const filteredAssignments = assignments.filter((assignment) => assignment.status === status);
+    const filteredAssignments = assignments.filter(
+      (assignment) => assignment.status === status
+    );
     return filteredAssignments.length === 0 ? (
       <div className="text-center text-gray-500">No assignments available.</div>
     ) : (
@@ -96,7 +89,7 @@ const ReviewerDashboard = () => {
                 Assignment {assignment.assignmentNumber.assignmentNumber}
               </Card.Title>
               <div className="d-flex align-items-start mb-2 mt-1">
-              <StatusBadge text={assignment.status}/>
+                <StatusBadge text={assignment.status} />
               </div>
               <Card.Text className="text-sm">
                 <strong>Github URL:</strong> {assignment.githubUrl}
@@ -113,14 +106,18 @@ const ReviewerDashboard = () => {
                       ? claimAssignment(assignment.id)
                       : navigate(`/assignments/${assignment.id}`);
                   }}
-                  // disabled={status === "Completed" ? true : false}
                 >
-                  {status === "Submitted" ? "Claim Assignment" 
-                  : status === "In review" ? "Assess"
-                  : status === "Pending Submission" ? "Submit"
-                  :status ==="Needs update" ? "View"
-                  : status === "Completed" ? "View"
-                  : ""}
+                  {status === "Submitted"
+                    ? "Claim Assignment"
+                    : status === "In review"
+                    ? "Assess"
+                    : status === "Pending Submission"
+                    ? "Submit"
+                    : status === "Needs update"
+                    ? "View"
+                    : status === "Completed"
+                    ? "View"
+                    : ""}
                 </Button>
               </div>
             </Card.Body>

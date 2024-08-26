@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import Spinner from "../util/Spinner";
 import {
   Form,
@@ -9,16 +8,23 @@ import {
   Container,
   Col,
   Row,
-  Badge
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { BaseUrl } from "../api/Constants";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
-
+import {
+  getAssignmentById,
+  postComment,
+  putRejectAssignment,
+  putReviewAssignment,
+} from "../api/Service";
 
 const ReviewerAssignmentView = () => {
-  const {jwt} = useAuth();
+  const { jwt, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const assignmentId = window.location.href.split("/assignments/")[1];
+
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
@@ -28,39 +34,38 @@ const ReviewerAssignmentView = () => {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [comment, setComment] = useState({
+    text: "",
+    assignment: assignmentId,
+    user: jwt,
+  });
   const [assignmentNumbers, setAssignmentNumberEnums] = useState([]);
   const [assignmentStatuses, setAssignmentStatusEnums] = useState([]);
   const prevAssignment = useRef(assignment);
-  const assignmentId = window.location.href.split("/assignments/")[1];
-  const navigate = useNavigate();
 
   useEffect(() => {
-    getAssignmentById();
+    fetchAssignmentById();
   }, [assignmentId]);
 
   useEffect(() => {
     prevAssignment.current = assignment;
   }, [assignment]);
 
-  async function getAssignmentById() {
+  async function fetchAssignmentById() {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BaseUrl}/assignments/getById/${assignmentId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
+      const response = await getAssignmentById(assignmentId, jwt);
       if (response.status === 200) {
         setAssignment(response.data);
         setAssignmentNumberEnums(response.data.assignmentNumberEnums || []);
         setAssignmentStatusEnums(response.data.assignmentStatusEnums || []);
       }
-      console.log("data", response.data);
     } catch (error) {
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      }
       console.error("Error fetching assignment:", error);
       setError(error.response?.data?.message || error.message);
     } finally {
@@ -81,15 +86,10 @@ const ReviewerAssignmentView = () => {
         ...assignment,
         status: "Completed",
       };
-      const response = await axios.put(
-        `${BaseUrl}/assignments/review/${assignment.id}`,
+      const response = await putReviewAssignment(
         revAssignment,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
+        assignmentId,
+        jwt
       );
       if (response.status === 200) {
         setAssignment(response.data);
@@ -97,28 +97,30 @@ const ReviewerAssignmentView = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      alert(
-        "FAILED TO REVIEW ASSIGNMENT: " + error.response?.data?.message ||
-          error.message
-      );
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      } else {
+        alert(
+          "FAILED TO REVIEW ASSIGNMENT: " + error.response?.data?.message ||
+            error.message
+        );
+      }
       console.error(error);
     }
   }
+
   async function rejectAssignment() {
     try {
-      const revAssignment = {
+      const rejectedAssignment = {
         ...assignment,
         status: "Needs update",
       };
-      const response = await axios.put(
-        `${BaseUrl}/assignments/review/${assignment.id}`,
-        revAssignment,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
+      const response = await putRejectAssignment(
+        rejectedAssignment,
+        assignmentId,
+        jwt
       );
       if (response.status === 200) {
         setAssignment(response.data);
@@ -126,13 +128,48 @@ const ReviewerAssignmentView = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      alert(
-        "FAILED TO REVIEW ASSIGNMENT: " + error.response?.data?.message ||
-          error.message
-      );
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      } else {
+        alert(
+          "FAILED TO REVIEW ASSIGNMENT: " + error.response?.data?.message ||
+            error.message
+        );
+      }
       console.error(error);
     }
   }
+
+  function updateComment(value) {
+    const newComment = { ...comment };
+    newComment.text = value;
+    setComment(newComment);
+  }
+
+  async function handleCommentSubmit() {
+    try {
+      const response = await postComment(comment, assignmentId, jwt);
+      setComment(response);
+      if (response.status === 201) {
+        alert("Comment added successfully!");
+        fetchAssignmentById();
+      }
+    } catch (error) {
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      }
+      console.error("Error: ", error?.message);
+      setError(
+        "Failed to create assignment: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
+  }
+
   if (loading) {
     return (
       <Container className="d-flex justify-content-center mt-5">
@@ -157,7 +194,7 @@ const ReviewerAssignmentView = () => {
             </h3>
           </Col>
           <Col>
-          <StatusBadge text={assignment.status}/>
+            <StatusBadge text={assignment.status} />
           </Col>
         </Row>
         <Form>
@@ -204,7 +241,7 @@ const ReviewerAssignmentView = () => {
             <Col sm="9">
               <Form.Control
                 type="url"
-                readOnly ={assignment.status ==="Completed" ? true: false}
+                readOnly={assignment.status === "Completed" ? true : false}
                 placeholder="https://teams-setter.com/review"
                 value={assignment.codeReviewVideoUrl || ""}
                 onChange={(e) =>
@@ -215,27 +252,49 @@ const ReviewerAssignmentView = () => {
             </Col>
           </FormGroup>
           <div>
-            {assignment.status ==="Completed" ? (<></>):(
+            {assignment.status === "Completed" ? (
+              <></>
+            ) : (
               <Button
-              type="button"
-              className="mt-3 text-white bg-gradient-to-r from-indigo-600 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 border border-transparent hover:bg-opacity-80 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 transition-all duration-300 shadow-lg transform hover:scale-105"
-              onClick={reviewAssignment}
-            >
-              Complete Review
-            </Button>
+                type="button"
+                className="mt-3 text-white bg-gradient-to-r from-indigo-600 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 border border-transparent hover:bg-opacity-80 focus:ring-4 focus:outline-none focus:ring-indigo-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 transition-all duration-300 shadow-lg transform hover:scale-105"
+                onClick={reviewAssignment}
+              >
+                Complete Review
+              </Button>
             )}
-          </div>          
+          </div>
           <div className="mr-2">
-            {assignment.status==="Needs update" || assignment.status ==="Completed" ? (<></>):(
+            {assignment.status === "Needs update" ||
+            assignment.status === "Completed" ? (
+              <></>
+            ) : (
               <Button
-              type="button"
-              variant="danger"
-              className="mt-3 bg-danger mr-5 border-none hover:bg-danger text-white font-bold px-5 py-2.5 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-danger focus:ring-offset-2 transition-all duration-300 shadow-lg transform hover:scale-105 text-center me-2 mb-2"
-              onClick={rejectAssignment}
-            >
-              Reject Assignment
-            </Button>
+                type="button"
+                variant="danger"
+                className="mt-3 bg-danger mr-5 border-none hover:bg-danger text-white font-bold px-5 py-2.5 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-danger focus:ring-offset-2 transition-all duration-300 shadow-lg transform hover:scale-105 text-center me-2 mb-2"
+                onClick={rejectAssignment}
+              >
+                Reject Assignment
+              </Button>
             )}
+            <div className="mt-4 bg-gray-100 rounded-lg shadow-md p-4">
+              <textarea
+                className="w-full p-3 mb-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out resize-none"
+                rows="4"
+                onChange={(e) => updateComment(e.target.value)}
+                value={comment.text}
+                placeholder="Write your comment here..."
+              ></textarea>
+              <Button
+                variant="primary"
+                type="button"
+                onClick={handleCommentSubmit}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              >
+                Post Comment
+              </Button>
+            </div>
           </div>
         </Form>
       </Container>

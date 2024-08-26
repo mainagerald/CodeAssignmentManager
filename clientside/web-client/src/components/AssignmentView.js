@@ -15,10 +15,10 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
-import { getAssignmentById, updateAssignment } from '../api/Service';
+import { getAssignmentById, updateAssignment } from "../api/Service";
 
 const AssignmentView = () => {
-  const { jwt } = useAuth();
+  const { jwt, logout } = useAuth();
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
@@ -43,7 +43,14 @@ const AssignmentView = () => {
         setAssignmentNumberEnums(data.assignmentNumberEnums || []);
         setAssignmentStatusEnums(data.assignmentStatusEnums || []);
       } catch (error) {
-        console.error("Error fetching assignment:", error);
+        if (error.message === "Session expired. Please log in again.") {
+          logout();
+          alert("Your session has expired. Please log in again.");
+          navigate("/login");
+        } else {
+          console.error("An error occurred:", error.message);
+          setError("Failed to update assignment.");
+        }
         setError(error.response?.data?.message || error.message);
       } finally {
         setLoading(false);
@@ -70,13 +77,23 @@ const AssignmentView = () => {
         status: "Submitted",
       };
 
-      const updatedAssignmentResponse = await updateAssignment(assignmentId, updatedAssignment, jwt);
+      const updatedAssignmentResponse = await updateAssignment(
+        assignmentId,
+        updatedAssignment,
+        jwt
+      );
       setAssignment(updatedAssignmentResponse);
       alert("Assignment updated and submitted successfully!");
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error: ", error?.message);
-      setError("Failed to update assignment.");
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      } else {
+        console.error("An error occurred:", error.message);
+        setError("Failed to update assignment.");
+      }
     }
   }
 
@@ -110,7 +127,11 @@ const AssignmentView = () => {
         </Row>
         <div>
           <Form>
-            <FormGroup as={Row} className="mb-3" controlId="formAssignmentNumber">
+            <FormGroup
+              as={Row}
+              className="mb-3"
+              controlId="formAssignmentNumber"
+            >
               <Form.Label column sm="3" className="font-semibold">
                 Assignment Number:
               </Form.Label>
@@ -170,18 +191,27 @@ const AssignmentView = () => {
                   type="text"
                   placeholder="Enter the branch name"
                   value={assignment.branch || ""}
-                  onChange={(e) => updateAssignmentState("branch", e.target.value)}
+                  onChange={(e) =>
+                    updateAssignmentState("branch", e.target.value)
+                  }
                   className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Col>
             </FormGroup>
             <div>
               {assignment.status === "Completed" ? (
-                <FormGroup as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
+                <FormGroup
+                  as={Row}
+                  className="mb-3"
+                  controlId="formCodeReviewVideoUrl"
+                >
                   <Form.Label column sm="3" className="font-semibold">
                     Review Video URL:
                   </Form.Label>
-                  <Col sm="9" className="d-flex align-items-center font-semibold text-lg">
+                  <Col
+                    sm="9"
+                    className="d-flex align-items-center font-semibold text-lg"
+                  >
                     <Link to={assignment.codeReviewVideoUrl}>
                       {assignment.codeReviewVideoUrl}
                     </Link>

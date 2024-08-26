@@ -13,12 +13,12 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const loginRequest = { email, password }; // Create request object here
+    const loginRequest = { email, password };
 
     try {
-      const data = await logIn(loginRequest); // Directly get the data
+      const data = await logIn(loginRequest);
       if (data.token) {
-        login(data.token); // Call login with the token
+        login(data.token);
         navigate("/dashboard");
       } else {
         throw new Error("No token received");

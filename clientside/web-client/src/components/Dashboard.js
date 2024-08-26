@@ -10,7 +10,7 @@ import { getAssignments } from "../api/Service";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const{jwt}=useAuth();
+  const{jwt, logout}=useAuth();
   const [assignments, setAssignments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,6 +27,11 @@ const Dashboard = () => {
         setAssignments(response.data);
       }
     } catch (error) {
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      }
       alert(error.message);
       setError("Failed to fetch!");
     } finally {

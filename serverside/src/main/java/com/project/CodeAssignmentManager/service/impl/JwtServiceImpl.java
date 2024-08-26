@@ -1,5 +1,6 @@
 package com.project.CodeAssignmentManager.service.impl;
 
+import com.project.CodeAssignmentManager.exceptions.TokenExpiredException;
 import com.project.CodeAssignmentManager.service.JwtService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.Jwts;
@@ -34,7 +35,7 @@ public class JwtServiceImpl implements JwtService {
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*60)) //1 hour
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
@@ -42,7 +43,7 @@ public class JwtServiceImpl implements JwtService {
     public String generateRefreshToken(Map<String, Object> extraClaim, UserDetails userDetails){
         return Jwts.builder().setClaims(extraClaim).setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*24*10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*60*24)) //1 day
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
@@ -68,7 +69,7 @@ public class JwtServiceImpl implements JwtService {
             log.info("Token validation result: {}", isValid);
             return isValid;
         }catch(ExpiredJwtException e){
-            throw new TokenExpiredException("Token expired {}", e);
+            throw new TokenExpiredException("Token expired!");
         } catch (Exception e) {
             log.error("Error validating token", e);
             return false;
