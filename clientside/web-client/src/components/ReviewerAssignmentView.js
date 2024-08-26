@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useLocalStorageState } from "../util/useLocalState";
 import Spinner from "../util/Spinner";
 import {
   Form,
@@ -13,12 +12,13 @@ import {
   Badge
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { BaseUrl } from "../api/Service";
+import { BaseUrl } from "../api/Constants";
 import StatusBadge from "../util/StatusBadge";
+import { useAuth } from "../context/AuthContext";
 
 
 const ReviewerAssignmentView = () => {
-  const [auth] = useLocalStorageState("", "jwt");
+  const {jwt} = useAuth();
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
@@ -50,7 +50,7 @@ const ReviewerAssignmentView = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );
@@ -87,7 +87,7 @@ const ReviewerAssignmentView = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );
@@ -116,7 +116,7 @@ const ReviewerAssignmentView = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );

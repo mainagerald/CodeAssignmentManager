@@ -12,7 +12,11 @@ import java.util.Optional;
 
 public interface AssignmentRepository extends JpaRepository<CodeAssignment, Long> {
     List<CodeAssignment> findByUser(User user);
-    Optional<CodeAssignment> findTopByUserOrderByAssignmentNumberDesc(User user);
+//    Optional<CodeAssignment> findTopByUserOrderByAssignmentNumberDesc(User user);
+
+    @Query("SELECT a FROM CodeAssignment a WHERE a.user = :user ORDER BY a.assignmentNumber DESC")
+    List<CodeAssignment> findTopByUserOrderByAssignmentNumberDesc(User user);
+
     @Query("select a from CodeAssignment a "
             + "where (a.status = 'submitted' and (a.reviewer is null or a.reviewer = :reviewer))"
             +"or a.reviewer = :reviewer ")

@@ -1,47 +1,33 @@
-import React, { useState } from 'react';
-import { Lock, User } from 'lucide-react';
-import { useLocalStorageState } from '../util/useLocalState';
+import React, { useState } from "react";
+import { Lock, User } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { logIn } from "../api/Service";
 
 const Login = () => {
-  const [auth, setAuth] = useLocalStorageState("", "jwt");
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async(e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const loginRequest = {
-      email: email,
-      password: password
-    }
-    // if(!auth){
-      try {
-        const loginResponse = await fetch(
-          "http://localhost:8888/api/auth/signin",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(loginRequest)
-          }
-        );
-        if(!loginResponse.ok){
-          throw new Error(`Http error! Status , ${loginResponse.status}`)
-        }
-        const data = await loginResponse.json();
-        if(data.token){
-          const jwtToken = data.token;
-          setAuth(jwtToken);
-        }
-        window.location.href='/dashboard';
-      } catch (error) {
-        setError(error.message);
-        alert(error.message);
+    const loginRequest = { email, password }; // Create request object here
+
+    try {
+      const data = await logIn(loginRequest); // Directly get the data
+      if (data.token) {
+        login(data.token); // Call login with the token
+        navigate("/dashboard");
+      } else {
+        throw new Error("No token received");
       }
-      console.log('Login attempt with email: ', email, ' and password: ', password);
+    } catch (error) {
+      setError(error.message);
+      alert(error.message);
     }
-  // };
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -53,7 +39,7 @@ const Login = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address

@@ -1,23 +1,21 @@
 import React from 'react'
-import { useLocalStorageState } from '../util/useLocalState'
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
+import { useAuth } from '../context/AuthContext';
 
 const Logout = () => {
   console.log("log out component rendered");
   
-    const[auth, setAuth] = useLocalStorageState("", "jwt");
+const{logout} = useAuth();
     const navigate = useNavigate();
 
-    function logout(){
-      console.log("triggered logout");
-        setAuth("");
-        console.log("set auth to:", auth);
+    function handleLogout(){
+logout();
           navigate("/login");
         }
   return (
     <div>
-      <Button onClick={logout}>
+      <Button onClick={handleLogout}>
         Logout
       </Button>
     </div>

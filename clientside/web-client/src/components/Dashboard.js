@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useLocalStorageState } from "../util/useLocalState";
-import { BaseUrl } from "../api/Service";
+import { BaseUrl } from "../api/Constants";
 import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
 import StatusBadge from "../util/StatusBadge";
+import { useAuth } from "../context/AuthContext";
+import { getAssignments } from "../api/Service";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [auth] = useLocalStorageState("", "jwt");
+  const{jwt}=useAuth();
   const [assignments, setAssignments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,22 +22,13 @@ const Dashboard = () => {
   async function getCurrentAssignments() {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${BaseUrl}/assignments/fetch`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
-          },
-        }
-      );
+      const response = await getAssignments(jwt);
       if (response.status === 200) {
         setAssignments(response.data);
       }
     } catch (error) {
       alert(error.message);
       setError("Failed to fetch!");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -51,9 +43,7 @@ const Dashboard = () => {
       alert("You have completed all available assignments!");
       return;
     }
-    
-    console.log("Next assignment number:", nextAssignmentNumber); // Debug log
-    navigate("/create-assignment", { state: { nextAssignmentNumber } });
+      navigate("/create-assignment", { state: { nextAssignmentNumber } });
   }
 
   return (
@@ -96,7 +86,7 @@ const Dashboard = () => {
                       navigate(`/assignments/${assignment.id}`);
                     }}
                   >
-                    Edit
+                    {assignment?.status==="Completed" ? "View" : "Edit"}
                   </Button>
                 </div>
               </Card.Body>

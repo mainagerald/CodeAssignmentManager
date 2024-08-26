@@ -67,6 +67,8 @@ public class JwtServiceImpl implements JwtService {
             boolean isValid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
             log.info("Token validation result: {}", isValid);
             return isValid;
+        }catch(ExpiredJwtException e){
+            throw new TokenExpiredException("Token expired {}", e);
         } catch (Exception e) {
             log.error("Error validating token", e);
             return false;

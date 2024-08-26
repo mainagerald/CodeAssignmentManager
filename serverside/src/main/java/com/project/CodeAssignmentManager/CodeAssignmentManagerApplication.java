@@ -9,6 +9,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.List;
+import java.util.Optional;
+
 @SpringBootApplication
 public class CodeAssignmentManagerApplication implements CommandLineRunner {
 
@@ -32,8 +35,8 @@ public class CodeAssignmentManagerApplication implements CommandLineRunner {
 //		}
 
 		//code reviewer
-		User reviewer = userRepository.findByRole(Role.REVIEWER);
-		if(reviewer==null){
+		List<User> reviewers = userRepository.findByRole(Role.REVIEWER);
+		if(reviewers.isEmpty()){
 			User user = new User();
 			user.setEmail("Rev2@gmail.com");
 			user.setRole(Role.REVIEWER);

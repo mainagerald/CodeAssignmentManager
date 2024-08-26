@@ -1,33 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useLocalStorageState } from '../util/useLocalState';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [auth, setAuth] = useLocalStorageState("", "jwt");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const{user, logout} = useAuth();
 
-  function logout() {
-      console.log("Triggered logout");
-      setAuth("");
-      setIsLoggingOut(true);
-  }
-
-  useEffect(() => {
-      if (isLoggingOut) {
-          const token = localStorage.getItem("jwt");
-          console.log("JWT token in local storage after logout:", token);
+    function handleLogout(){
+      logout();
           navigate("/login");
-      }
-  }, [isLoggingOut, navigate]);
+        }
 
   return (
     <div>
-      {auth ? (
+      {user ? (
         <nav className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <div className="text-white text-2xl font-bold">
-            <Link to="/dashboard" className="no-underline hover:text-gray-200 text-white transition duration-300">Coder</Link>
+            <Link to="/dashboard" className="no-underline hover:text-gray-200 text-white transition duration-300">
+            {user?.role ==="REVIEWER"? "Reviewer" : user?.role ==="ADMIN" ? "Admin": user?.role==="USER" ? "Coder" : "Dev"}</Link>
           </div>
           <div className="hidden md:flex space-x-6 items-center">
             <Link to="/dashboard" className="text-white hover:text-gray-200 transition duration-300">
@@ -37,7 +28,7 @@ const Navbar = () => {
               Profile
             </Link>
             <button 
-              onClick={logout} 
+              onClick={handleLogout} 
               className="text-white hover:text-gray-200 transition duration-300 focus:outline-none"
             >
               Logout

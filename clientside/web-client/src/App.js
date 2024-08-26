@@ -10,23 +10,12 @@ import CreateAssignmentView from "./components/CreateAssignmentView";
 import PrivateRoute from "./util/PrivateRoutes";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Logout from "./components/Logout";
-import { useLocalStorageState } from "./util/useLocalState";
-import { jwtDecode } from "jwt-decode";
-import Navbar from "./components/Navbar";
 import ReviewerDashboard from "./components/ReviewerDashboard";
 import ReviewerAssignmentView from "./components/ReviewerAssignmentView";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const [jwt] = useLocalStorageState("", "jwt");
-  const [role, setRole] = useState("");
-
-  useEffect(()=> {
-    if (jwt) {
-      var decodedToken = jwtDecode(jwt);
-      var role = decodedToken.authorities[0];
-      setRole(role);
-    }
-  }, [jwt]);
+  const {user} = useAuth();
 
   return (
     <div>
@@ -37,7 +26,7 @@ function App() {
           path="/dashboard"
           element={
             <PrivateRoute>
-              {role === "REVIEWER" ? <ReviewerDashboard /> : <Dashboard />}
+              {user?.role === "REVIEWER" ? <ReviewerDashboard /> : <Dashboard />}
             </PrivateRoute>
           }
         />
@@ -45,7 +34,7 @@ function App() {
           path="/assignments/:id"
           element={
             <PrivateRoute>
-              {role === "REVIEWER" ? <ReviewerAssignmentView /> : <AssignmentView />}
+              {user?.role === "REVIEWER" ? <ReviewerAssignmentView /> : <AssignmentView />}
             </PrivateRoute>
           }
         />

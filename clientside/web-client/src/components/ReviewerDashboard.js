@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useLocalStorageState } from "../util/useLocalState";
-import { BaseUrl } from "../api/Service";
+import { BaseUrl } from "../api/Constants";
 import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, Card } from "react-bootstrap";
 import StatusBadge from "../util/StatusBadge";
+import { useAuth } from "../context/AuthContext";
 
 
 const ReviewerDashboard = () => {
   const navigate = useNavigate();
-  const [auth] = useLocalStorageState("", "jwt");
+  const {jwt} = useAuth();
   const [assignments, setAssignments] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +26,7 @@ const ReviewerDashboard = () => {
       const response = await axios.get(`${BaseUrl}/assignments/fetch`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${auth}`,
+          Authorization: `Bearer ${jwt}`,
         },
       });
       console.log("res-->", response);
@@ -50,7 +50,7 @@ const ReviewerDashboard = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );

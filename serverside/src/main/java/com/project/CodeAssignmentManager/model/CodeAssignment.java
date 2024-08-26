@@ -16,6 +16,7 @@ public class CodeAssignment {
     private String codeReviewVideoUrl;
 
     @Enumerated(EnumType.STRING)
+    @Column(unique = true)
     private AssignmentNumberEnum assignmentNumber;
 
     @ManyToOne(optional = false)

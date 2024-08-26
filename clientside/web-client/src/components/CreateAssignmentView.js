@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocalStorageState } from "../util/useLocalState";
 import {
   Form,
   FormGroup,
@@ -11,10 +10,10 @@ import {
   Row,
 } from "react-bootstrap";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import Navbar from "./Navbar";
+import { useAuth } from "../context/AuthContext";
 
 const CreateAssignmentView = () => {
-  const [auth] = useLocalStorageState("", "jwt");
+const{jwt}=useAuth();
   const location = useLocation();
   const nextAssignmentNumber = location.state?.nextAssignmentNumber;
   const [assignment, setAssignment] = useState({
@@ -40,7 +39,7 @@ const CreateAssignmentView = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );
@@ -79,7 +78,7 @@ const CreateAssignmentView = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );

@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { useLocalStorageState } from "../util/useLocalState";
 import Spinner from "../util/Spinner";
 import {
   Form,
@@ -16,9 +14,11 @@ import {
 } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import StatusBadge from "../util/StatusBadge";
+import { useAuth } from "../context/AuthContext";
+import { getAssignmentById, updateAssignment } from '../api/Service';
 
 const AssignmentView = () => {
-  const [auth] = useLocalStorageState("", "jwt");
+  const { jwt } = useAuth();
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
@@ -35,40 +35,28 @@ const AssignmentView = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getAssignmentById();
-  }, [assignmentId]);
+    const fetchAssignment = async () => {
+      try {
+        setLoading(true);
+        const data = await getAssignmentById(assignmentId, jwt);
+        setAssignment(data);
+        setAssignmentNumberEnums(data.assignmentNumberEnums || []);
+        setAssignmentStatusEnums(data.assignmentStatusEnums || []);
+      } catch (error) {
+        console.error("Error fetching assignment:", error);
+        setError(error.response?.data?.message || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssignment();
+  }, [assignmentId, jwt]);
 
   useEffect(() => {
     prevAssignment.current = assignment;
   }, [assignment]);
 
-  async function getAssignmentById() {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `http://localhost:8888/api/assignments/getById/${assignmentId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
-          },
-        }
-      );
-      if (response.status === 200) {
-        setAssignment(response.data);
-        setAssignmentNumberEnums(response.data.assignmentNumberEnums || []);
-        setAssignmentStatusEnums(response.data.assignmentStatusEnums || []);
-      }
-      console.log("data", response.data);
-    } catch (error) {
-      console.error("Error fetching assignment:", error);
-      setError(error.response?.data?.message || error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function updateAssignment(prop, value) {
+  function updateAssignmentState(prop, value) {
     setAssignment((prevAssignment) => ({
       ...prevAssignment,
       [prop]: value,
@@ -82,21 +70,10 @@ const AssignmentView = () => {
         status: "Submitted",
       };
 
-      const updatedAssignmentResponse = await axios.put(
-        `http://localhost:8888/api/assignments/update/${assignmentId}`,
-        updatedAssignment,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
-          },
-        }
-      );
-      if (updatedAssignmentResponse.status === 200) {
-        setAssignment(updatedAssignmentResponse.data);
-        alert("Assignment updated and submitted successfully!");
-        navigate("/dashboard")
-      }
+      const updatedAssignmentResponse = await updateAssignment(assignmentId, updatedAssignment, jwt);
+      setAssignment(updatedAssignmentResponse);
+      alert("Assignment updated and submitted successfully!");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error: ", error?.message);
       setError("Failed to update assignment.");
@@ -128,16 +105,12 @@ const AssignmentView = () => {
             </h3>
           </Col>
           <Col>
-            <StatusBadge text={assignment.status}/>
+            <StatusBadge text={assignment.status} />
           </Col>
         </Row>
         <div>
           <Form>
-            <FormGroup
-              as={Row}
-              className="mb-3"
-              controlId="formAssignmentNumber"
-            >
+            <FormGroup as={Row} className="mb-3" controlId="formAssignmentNumber">
               <Form.Label column sm="3" className="font-semibold">
                 Assignment Number:
               </Form.Label>
@@ -152,7 +125,7 @@ const AssignmentView = () => {
                       : "Select Assignment"
                   }
                   onSelect={(eventKey) =>
-                    updateAssignment(
+                    updateAssignmentState(
                       "assignmentNumber",
                       assignmentNumbers.find(
                         (item) => item.assignmentNumber === parseInt(eventKey)
@@ -182,7 +155,7 @@ const AssignmentView = () => {
                   placeholder="Enter the GitHub URL"
                   value={assignment.githubUrl || ""}
                   onChange={(e) =>
-                    updateAssignment("githubUrl", e.target.value)
+                    updateAssignmentState("githubUrl", e.target.value)
                   }
                   className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -197,18 +170,14 @@ const AssignmentView = () => {
                   type="text"
                   placeholder="Enter the branch name"
                   value={assignment.branch || ""}
-                  onChange={(e) => updateAssignment("branch", e.target.value)}
+                  onChange={(e) => updateAssignmentState("branch", e.target.value)}
                   className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Col>
             </FormGroup>
             <div>
               {assignment.status === "Completed" ? (
-                <FormGroup
-                  as={Row}
-                  className="mb-3"
-                  controlId="formCodeReviewVideoUrl"
-                >
+                <FormGroup as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
                   <Form.Label column sm="3" className="font-semibold">
                     Review Video URL:
                   </Form.Label>
@@ -218,14 +187,10 @@ const AssignmentView = () => {
                     </Link>
                   </Col>
                 </FormGroup>
-              ) : (
-                <></>
-              )}
+              ) : null}
             </div>
             <div>
-              {assignment.status === "Completed" ? (
-                <></>
-              ) : (
+              {assignment.status === "Completed" ? null : (
                 <Button
                   type="button"
                   className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

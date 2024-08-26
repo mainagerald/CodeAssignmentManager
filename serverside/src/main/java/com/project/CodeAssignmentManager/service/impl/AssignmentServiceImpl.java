@@ -34,9 +34,10 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public CodeAssignmentResponseDto createAssignment(CodeAssignmentCreateDto createDto, User user) {
-        Optional<CodeAssignment> lastAssignment = assignmentRepository.findTopByUserOrderByAssignmentNumberDesc(user);
+//        Optional<CodeAssignment> lastAssignment = assignmentRepository.findTopByUserOrderByAssignmentNumberDesc(user);
 
-        int nextAssignmentNumber = lastAssignment.map(assignment -> assignment.getAssignmentNumber().getAssignmentNumber() + 1).orElse(1);
+        List<CodeAssignment> assignments = assignmentRepository.findTopByUserOrderByAssignmentNumberDesc(user);
+        int nextAssignmentNumber = (assignments.isEmpty()) ? 1 : assignments.get(0).getAssignmentNumber().getAssignmentNumber() + 1;
 
         if (createDto.getAssignmentNumber().getAssignmentNumber() != nextAssignmentNumber) {
             log.info("trying number: {}", createDto);
