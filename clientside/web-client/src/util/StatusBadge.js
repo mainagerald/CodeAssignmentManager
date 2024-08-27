@@ -3,8 +3,6 @@ import { Badge } from "react-bootstrap";
 
 const StatusBadge = (props) => {
   const { text } = props;
-  console.log("badge" + text);
-
   function getBadgeCol(text) {
     return text === "Pending Submission"
       ? "warning"

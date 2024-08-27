@@ -1,7 +1,6 @@
 package com.project.CodeAssignmentManager.service.impl;
 
 import com.project.CodeAssignmentManager.dto.JwtAuthResponse;
-import com.project.CodeAssignmentManager.dto.RefreshTokenRequest;
 import com.project.CodeAssignmentManager.dto.SignInRequest;
 import com.project.CodeAssignmentManager.dto.SignUpRequest;
 import com.project.CodeAssignmentManager.enums.Role;
@@ -24,53 +23,59 @@ import java.util.HashMap;
 public class AuthServiceImpl implements AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final UserRepository userRepository;
-    private  final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public User signUp(SignUpRequest signUpRequest){
+    public User signUp(SignUpRequest signUpRequest) {
         User user = new User();
         user.setEmail(signUpRequest.getEmail());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         user.setRole(Role.USER);
-
         return userRepository.save(user);
     }
 
-    public JwtAuthResponse signIn(SignInRequest signInRequest){
+    public JwtAuthResponse signIn(SignInRequest signInRequest) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequest.getEmail(), signInRequest.getPassword()));
+        var user = userRepository.findByEmail(signInRequest.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email address"));
+        return createJwtAuthResponse(user);
+    }
 
-        var user = userRepository.findByEmail(signInRequest.getEmail()).orElseThrow(()-> new IllegalArgumentException("Invalid email address"));
-        var jwt = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+    public JwtAuthResponse refreshToken(String refreshToken) {
+        try {
+            String userEmail = jwtService.extractUsername(refreshToken);
+            var user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        JwtAuthResponse jwtAuthResponse= new JwtAuthResponse();
+            if (jwtService.isRefreshTokenValid(refreshToken, user)) {
+                return createJwtAuthResponse(user);
+            } else {
+                throw new IllegalArgumentException("Invalid refresh token");
+            }
+        } catch (Exception e) {
+            log.error("Error refreshing token: ", e);
+            throw new IllegalArgumentException("Invalid refresh token");
+        }
+    }
 
-        jwtAuthResponse.setToken(jwt);
+    private JwtAuthResponse createJwtAuthResponse(User user) {
+        var accessToken = jwtService.generateAccessToken(user);
+        var refreshToken = jwtService.generateRefreshToken(user);
+
+        JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();
+        jwtAuthResponse.setAccessToken(accessToken);
         jwtAuthResponse.setRefreshToken(refreshToken);
-
         return jwtAuthResponse;
     }
 
-    public JwtAuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest){
-        String userEmail = jwtService.extractUsername(refreshTokenRequest.getToken());
-        var user = userRepository.findByEmail(userEmail).orElseThrow();
-        if(jwtService.isTokenValid(refreshTokenRequest.getToken(), user)){
-            var jwt = jwtService.generateToken(user);
-
-            JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();
-            jwtAuthResponse.setToken(jwt);
-            jwtAuthResponse.setRefreshToken(refreshTokenRequest.getToken());
-            return jwtAuthResponse;
-        };
-        return null;
-    }
-    public boolean isTokenValid(String token){
-        try{
+    public boolean isTokenValid(String token) {
+        try {
             String userEmail = jwtService.extractUsername(token);
-            var user = userRepository.findByEmail(userEmail).orElseThrow(()-> new IllegalArgumentException("Invalid email address!"));
+            var user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid email address!"));
             return jwtService.isTokenValid(token, user);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Error occurred: {}", e.getMessage());
             return false;
         }

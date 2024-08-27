@@ -2,7 +2,6 @@ package com.project.CodeAssignmentManager.controller;
 
 
 import com.project.CodeAssignmentManager.dto.JwtAuthResponse;
-import com.project.CodeAssignmentManager.dto.RefreshTokenRequest;
 import com.project.CodeAssignmentManager.dto.SignInRequest;
 import com.project.CodeAssignmentManager.dto.SignUpRequest;
 import com.project.CodeAssignmentManager.model.User;
@@ -32,8 +31,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<JwtAuthResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest){
-        return ResponseEntity.ok(authService.refreshToken(refreshTokenRequest));
+    public ResponseEntity<JwtAuthResponse> refreshToken(@RequestBody String refreshToken){
+        refreshToken = refreshToken.replace("\"", "");
+        return ResponseEntity.ok(authService.refreshToken(refreshToken));
     }
     @PostMapping("/validate-token")
     public ResponseEntity<?> validateToken(@RequestBody String token){

@@ -5,8 +5,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Map;
 
 public interface JwtService {
+    String generateAccessToken(UserDetails userDetails);
+    String generateRefreshToken(UserDetails userDetails);
+    String generateToken(UserDetails userDetails, long expiration);
     String extractUsername(String token);
-    String generateToken(UserDetails userDetails);
     boolean isTokenValid(String token, UserDetails userDetails);
-    String generateRefreshToken(Map<String, Object> extraClaim, UserDetails userDetails);
+    boolean isTokenExpired(String token);
+    Long extractUserId(String token);
+    boolean isRefreshTokenValid(String token, UserDetails userDetails);
 }

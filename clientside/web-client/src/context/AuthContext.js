@@ -1,42 +1,63 @@
-// AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import { BaseUrl } from "../api/Constants";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [jwt, setJwt] = useState(() => {
-    return localStorage.getItem("jwt") || "";
-  });
+  const [jwt, setJwt] = useState(() => localStorage.getItem("jwt") || "");
+  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem("refreshToken") || "");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     if (jwt) {
       const decodedToken = jwtDecode(jwt);
       setUser({
-        role: decodedToken.authorities[0]});
+        role: decodedToken.authorities[0],
+      });
     } else {
       setUser(null);
     }
   }, [jwt]);
 
-  const login = (token) => {
-    setJwt(token);
-    localStorage.setItem("jwt", token);
+  const login = (accessToken, refreshToken) => {
+    setJwt(accessToken);
+    setRefreshToken(refreshToken);
+    localStorage.setItem("jwt", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
   };
 
   const logout = () => {
     setJwt("");
+    setRefreshToken("");
     localStorage.removeItem("jwt");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/login";
+  };
+
+  const refreshAccessToken = async () => {
+    try {
+      const response = await axios.post(`${BaseUrl}/auth/refresh`, JSON.stringify(refreshToken), {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+      login(newAccessToken, newRefreshToken);
+      return newAccessToken;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      logout();
+      return null;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ jwt, user, login, logout }}>
+    <AuthContext.Provider value={{ jwt, user, login, logout, refreshAccessToken }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

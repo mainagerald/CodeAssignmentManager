@@ -1,26 +1,24 @@
-import axios from "axios";
+import apiClient from "./Interceptor/apiClient";
 
 const BaseUrl = "http://localhost:8888/api";
 
 export const logIn = async (loginRequest) => {
   try {
-    const response = await axios.post(`${BaseUrl}/auth/signin`, loginRequest, {
+    const response = await apiClient.post(`${BaseUrl}/auth/signin`, loginRequest, {
       headers: {
         "Content-Type": "application/json",
       },
     });
     return response.data;
   } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
+console.log(error);
     throw new Error(error.response?.data?.message || "Login failed");
   }
 };
 
 export const getAssignmentById = async (assignmentId, jwt) => {
   try {
-    const response = await axios.get(
+    const response = await apiClient.get(
       `${BaseUrl}/assignments/getById/${assignmentId}`,
       {
         headers: {
@@ -44,7 +42,7 @@ export const updateAssignment = async (
   jwt
 ) => {
   try {
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${BaseUrl}/assignments/update/${assignmentId}`,
       updatedAssignment,
       {
@@ -65,7 +63,7 @@ export const updateAssignment = async (
 
 export const getAssignments = async (jwt) => {
   try {
-    const response = await axios.get(`${BaseUrl}/assignments/fetch`, {
+    const response = await apiClient.get(`${BaseUrl}/assignments/fetch`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${jwt}`,
@@ -73,6 +71,8 @@ export const getAssignments = async (jwt) => {
     });
     return response;
   } catch (error) {
+    console.log("error--", error.response);
+    
     if (error.response && error.response.status === 401) {
       throw new Error("Session expired. Please log in again.");
     }
@@ -82,7 +82,7 @@ export const getAssignments = async (jwt) => {
 
 export const getAssignmentEnums = async (jwt) => {
   try {
-    const response = await axios.get(`${BaseUrl}/assignments/enums`, {
+    const response = await apiClient.get(`${BaseUrl}/assignments/enums`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${jwt}`,
@@ -99,7 +99,7 @@ export const getAssignmentEnums = async (jwt) => {
 
 export const CreateAssignment = async (newAssignment, jwt) => {
   try {
-    const response = await axios.post(
+    const response = await apiClient.post(
       `${BaseUrl}/assignments/create`,
       newAssignment,
       {
@@ -124,7 +124,7 @@ export const putReviewAssignment = async (
   jwt
 ) => {
   try {
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${BaseUrl}/assignments/review/${assignmentId}`,
       reviewedAssignment,
       {
@@ -149,7 +149,7 @@ export const putRejectAssignment = async (
   jwt
 ) => {
   try {
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${BaseUrl}/assignments/review/${assignmentId}`,
       rejectedAssignment,
       {
@@ -170,7 +170,7 @@ export const putRejectAssignment = async (
 
 export const putClaimAssignment = async (assignmentId, jwt) => {
   try {
-    const response = await axios.put(
+    const response = await apiClient.put(
       `${BaseUrl}/assignments/claim/${assignmentId}`,
       {},
       {
@@ -191,7 +191,7 @@ export const putClaimAssignment = async (assignmentId, jwt) => {
 
 export const postComment=async(comment, assignmentId, jwt)=>{
   try{
-  const response = await axios.post(`${BaseUrl}/assignments/comment/${assignmentId}`,
+  const response = await apiClient.post(`${BaseUrl}/assignments/comment/${assignmentId}`,
     comment,
     {
       headers:{

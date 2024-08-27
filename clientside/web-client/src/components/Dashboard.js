@@ -3,7 +3,7 @@ import { BaseUrl } from "../api/Constants";
 import Spinner from "../util/Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, Card } from "react-bootstrap";
+import { Button, Card } from "react-bootstrap";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
 import { getAssignments } from "../api/Service";
@@ -28,9 +28,8 @@ const Dashboard = () => {
       }
     } catch (error) {
       if (error.message === "Session expired. Please log in again.") {
-        logout();
         alert("Your session has expired. Please log in again.");
-        navigate("/login");
+        logout();
       }
       alert(error.message);
       setError("Failed to fetch!");

@@ -17,8 +17,8 @@ const Login = () => {
 
     try {
       const data = await logIn(loginRequest);
-      if (data.token) {
-        login(data.token);
+      if (data.accessToken && data.refreshToken) {
+        login(data.accessToken, data.refreshToken);
         navigate("/dashboard");
       } else {
         throw new Error("No token received");
