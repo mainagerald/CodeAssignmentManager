@@ -226,3 +226,22 @@ export const getComments=async(assignmentId, jwt)=>{
   throw new Error(error.response?.data?.message || "Put failed");
 }
 }
+
+export const deleteComment=async(commentId, jwt)=>{
+  try{
+  const response = await apiClient.delete(`${BaseUrl}/comments/delete/${commentId}`,
+    {
+      headers:{
+        "Content-Type" : "application/json",
+        Authorization: `Bearer ${jwt}`
+      }
+    }
+  )
+  return response;
+} catch (error) {
+  if (error.response && error.response.status === 401) {
+    throw new Error("Session expired. Please log in again.");
+  }
+  throw new Error(error.response?.data?.message || "Put failed");
+}
+}

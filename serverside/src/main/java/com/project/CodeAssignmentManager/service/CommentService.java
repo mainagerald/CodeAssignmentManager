@@ -10,4 +10,5 @@ import java.util.Set;
 public interface CommentService {
     CommentResponseDto createComment(CommentCreateDto createDto);
     Set<CommentResponseDto> getComments(Long assignmentId);
+    void deleteComment(Long commentId);
 }

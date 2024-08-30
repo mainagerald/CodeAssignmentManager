@@ -13,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
 import {
+  deleteComment,
   getAssignmentById,
   getComments,
   postComment,
@@ -20,12 +21,14 @@ import {
   putReviewAssignment,
 } from "../api/Service";
 import { jwtDecode } from "jwt-decode";
+import Comment from "../util/Comment";
+import apiClient from "../api/Interceptor/apiClient";
 
 const ReviewerAssignmentView = () => {
   const { jwt, logout } = useAuth();
   const navigate = useNavigate();
 
-  const {assignmentId} = useParams();
+  const { assignmentId } = useParams();
 
   const [assignment, setAssignment] = useState({
     branch: "",
@@ -50,7 +53,7 @@ const ReviewerAssignmentView = () => {
     fetchAssignmentById();
   }, [assignmentId]);
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchComments();
   }, [assignmentId]);
 
@@ -64,9 +67,10 @@ const ReviewerAssignmentView = () => {
       setLoading(true);
       const response = await getAssignmentById(assignmentId, jwt);
       console.log("response", response);
-      
+
       if (response.status === 200) {
         setAssignment(response.data);
+        fetchComments();
         setAssignmentNumberEnums(response.data.assignmentNumberEnums || []);
         setAssignmentStatusEnums(response.data.assignmentStatusEnums || []);
       }
@@ -82,7 +86,7 @@ const ReviewerAssignmentView = () => {
       setLoading(false);
     }
   }
-  async function fetchComments(){
+  async function fetchComments() {
     try {
       setLoading(true);
       const response = await getComments(assignmentId, jwt);
@@ -176,14 +180,14 @@ const ReviewerAssignmentView = () => {
     const newComment = { ...comment };
     newComment.text = value;
     setComment(newComment);
-    console.log("sending-->", newComment);    
+    console.log("sending-->", newComment);
   }
 
   async function handleCommentSubmit() {
     try {
       const response = await postComment(comment, assignmentId, jwt);
       setComment(response);
-      if (response.status ===200) {
+      if (response.status === 200) {
         alert("Comment added successfully!");
         fetchAssignmentById();
       }
@@ -199,6 +203,10 @@ const ReviewerAssignmentView = () => {
           (error.response?.data?.message || error.message)
       );
     }
+  }
+  async function handleReply() {}
+  async function handleDelete() {
+    const response = await deleteComment();
   }
 
   if (loading) {
@@ -217,12 +225,11 @@ const ReviewerAssignmentView = () => {
 
   return (
     <div>
-      <Container className="mt-3 p-4 bg-white shadow-md rounded">
+      <Container className="mt-3 p-4 bg-white rounded">
         <Row className="d-flex align-items-center mb-4">
           <Col>
             <h3 className="text-2xl font-bold">
-              {console.log("assignment->", assignment)
-              }
+              {console.log("assignment->", assignment)}
               Assignment {assignment.assignmentNumber?.assignmentNumber}
             </h3>
           </Col>
@@ -311,9 +318,9 @@ const ReviewerAssignmentView = () => {
                 Reject Assignment
               </Button>
             )}
-            <div className="mt-4 bg-gray-100 rounded-lg shadow-md p-4">
+            <div className="mt-4 bg-white rounded-lg shadow-md p-6">
               <textarea
-                className="w-full p-3 mb-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out resize-none"
+                className="w-full p-4 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out resize-none"
                 rows="4"
                 onChange={(e) => updateComment(e.target.value)}
                 value={comment.text}
@@ -323,24 +330,35 @@ const ReviewerAssignmentView = () => {
                 variant="primary"
                 type="button"
                 onClick={handleCommentSubmit}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
               >
                 Post Comment
               </Button>
             </div>
-            <div className="bg-gray mt-2">
-              {comments ?     
-              comments.map((comment)=>(
-              <textarea
-                key={comment.id}
-                className="w-full p-2 mb-2 border bg-gray-100 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out resize-none"
-                rows="4"
-                readOnly
-                onChange={(e) => updateComment(e.target.value)}
-                value={comment.text}
-                placeholder="Write your comment here..."
-              ></textarea>))
-              :<></>}
+
+            <div className="mt-2">
+              <div className="p-4 mt-4">
+                {comments && comments.length > 0 ? (
+                  comments.sort((a, b)=>new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((comment) => (
+                    <Comment
+                      keyId={comment.id}
+                      username={comment.username}
+                      text={comment.text}
+                      createdAt={comment.createdAt}
+                      onReply={() => handleReply(comment.id)}
+                      showDeleteButton={
+                        comment.createdBy === jwtDecode(jwt).userId
+                      }
+                      onDelete={() => handleDelete(comment.id)}
+                    />
+                  ))
+                ) : (
+                  <div className="text-gray-500 dark:text-gray-400 text-center">
+                    No comments available.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Form>

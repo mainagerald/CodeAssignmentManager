@@ -32,6 +32,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public CommentResponseDto createComment(CommentCreateDto createDto) {
         User reviewer = userRepository.findById(createDto.getCreatedBy()).orElseThrow(()->new NotFoundException("User not found"));
+        var username = reviewer.getUsername();
         CodeAssignment assignment = assignmentRepository.findById(createDto.getAssignment()).orElseThrow(()->new NotFoundException("Assignment Not Found"));
         if (assignment.getReviewer().getId().equals(reviewer.getId())){
             Comment newComment = new Comment();
@@ -45,6 +46,7 @@ public class CommentServiceImpl implements CommentService {
             responseDto.setCreatedAt(savedComment.getCreatedAt());
             responseDto.setText(savedComment.getText());
             responseDto.setCreatedBy(savedComment.getCreatedBy().getId());
+            responseDto.setUsername(username);
             return responseDto;
         }else {
             throw new UnauthorizedException("Unauthorized to comment");
@@ -58,12 +60,22 @@ public class CommentServiceImpl implements CommentService {
                 .stream().map(this::convertToListDto).collect(Collectors.toSet());
     }
 
+    @Override
+    public void deleteComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId).orElseThrow(()->new NotFoundException("No comment found with the given id"));
+        commentRepository.deleteById(commentId);
+    }
+
     private CommentResponseDto convertToListDto(Comment comment){
+        User creator = userRepository.findById(comment.getCreatedBy().getId()).orElseThrow(()-> new NotFoundException("Commenter not found"));
+        var username = creator.getFirstName();
+        log.info("logging creator: {}", creator);
         CommentResponseDto dto = new CommentResponseDto();
         dto.setId(comment.getId());
         dto.setText(comment.getText());
-        dto.setCreatedBy(comment.getCreatedBy().getId());
+        dto.setCreatedBy(creator.getId());
         dto.setCreatedAt(comment.getCreatedAt());
+        dto.setUsername(username);
         return dto;
     }
 }
