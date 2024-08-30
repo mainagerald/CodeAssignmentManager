@@ -12,7 +12,7 @@ import {
   Dropdown,
   ButtonGroup,
 } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
 import { getAssignmentById, updateAssignment } from "../api/Service";
@@ -31,7 +31,7 @@ const AssignmentView = () => {
   const [assignmentNumbers, setAssignmentNumberEnums] = useState([]);
   const [assignmentStatuses, setAssignmentStatusEnums] = useState([]);
   const prevAssignment = useRef(assignment);
-  const assignmentId = window.location.href.split("/assignments/")[1];
+  const {assignmentId} = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -9,21 +9,23 @@ import {
   Col,
   Row,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
 import {
   getAssignmentById,
+  getComments,
   postComment,
   putRejectAssignment,
   putReviewAssignment,
 } from "../api/Service";
+import { jwtDecode } from "jwt-decode";
 
 const ReviewerAssignmentView = () => {
   const { jwt, logout } = useAuth();
   const navigate = useNavigate();
 
-  const assignmentId = window.location.href.split("/assignments/")[1];
+  const {assignmentId} = useParams();
 
   const [assignment, setAssignment] = useState({
     branch: "",
@@ -37,8 +39,9 @@ const ReviewerAssignmentView = () => {
   const [comment, setComment] = useState({
     text: "",
     assignment: assignmentId,
-    user: jwt,
+    createdBy: jwtDecode(jwt).userId,
   });
+  const [comments, setComments] = useState([]);
   const [assignmentNumbers, setAssignmentNumberEnums] = useState([]);
   const [assignmentStatuses, setAssignmentStatusEnums] = useState([]);
   const prevAssignment = useRef(assignment);
@@ -47,19 +50,46 @@ const ReviewerAssignmentView = () => {
     fetchAssignmentById();
   }, [assignmentId]);
 
+  useEffect(()=>{
+    fetchComments();
+  }, [assignmentId]);
+
   useEffect(() => {
     prevAssignment.current = assignment;
   }, [assignment]);
 
   async function fetchAssignmentById() {
+    console.log("fetching");
     try {
       setLoading(true);
       const response = await getAssignmentById(assignmentId, jwt);
+      console.log("response", response);
+      
       if (response.status === 200) {
         setAssignment(response.data);
         setAssignmentNumberEnums(response.data.assignmentNumberEnums || []);
         setAssignmentStatusEnums(response.data.assignmentStatusEnums || []);
       }
+    } catch (error) {
+      if (error.message === "Session expired. Please log in again.") {
+        logout();
+        alert("Your session has expired. Please log in again.");
+        navigate("/login");
+      }
+      console.error("Error fetching assignment:", error);
+      setError(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function fetchComments(){
+    try {
+      setLoading(true);
+      const response = await getComments(assignmentId, jwt);
+      if (response.status === 200) {
+        setComments(response.data);
+      }
+      console.log("Success Comments", comments);
     } catch (error) {
       if (error.message === "Session expired. Please log in again.") {
         logout();
@@ -146,13 +176,14 @@ const ReviewerAssignmentView = () => {
     const newComment = { ...comment };
     newComment.text = value;
     setComment(newComment);
+    console.log("sending-->", newComment);    
   }
 
   async function handleCommentSubmit() {
     try {
       const response = await postComment(comment, assignmentId, jwt);
       setComment(response);
-      if (response.status === 201) {
+      if (response.status ===200) {
         alert("Comment added successfully!");
         fetchAssignmentById();
       }
@@ -190,6 +221,8 @@ const ReviewerAssignmentView = () => {
         <Row className="d-flex align-items-center mb-4">
           <Col>
             <h3 className="text-2xl font-bold">
+              {console.log("assignment->", assignment)
+              }
               Assignment {assignment.assignmentNumber?.assignmentNumber}
             </h3>
           </Col>
@@ -294,6 +327,20 @@ const ReviewerAssignmentView = () => {
               >
                 Post Comment
               </Button>
+            </div>
+            <div className="bg-gray mt-2">
+              {comments ?     
+              comments.map((comment)=>(
+              <textarea
+                key={comment.id}
+                className="w-full p-2 mb-2 border bg-gray-100 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out resize-none"
+                rows="4"
+                readOnly
+                onChange={(e) => updateComment(e.target.value)}
+                value={comment.text}
+                placeholder="Write your comment here..."
+              ></textarea>))
+              :<></>}
             </div>
           </div>
         </Form>

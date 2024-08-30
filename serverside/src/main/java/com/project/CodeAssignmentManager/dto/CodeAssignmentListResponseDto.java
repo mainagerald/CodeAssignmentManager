@@ -2,6 +2,7 @@ package com.project.CodeAssignmentManager.dto;
 
 import com.project.CodeAssignmentManager.enums.AssignmentNumberEnum;
 import com.project.CodeAssignmentManager.enums.AssignmentStatusEnum;
+import com.project.CodeAssignmentManager.model.Comment;
 import lombok.Data;
 
 @Data

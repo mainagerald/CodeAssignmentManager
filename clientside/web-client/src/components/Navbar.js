@@ -16,15 +16,15 @@ const Navbar = () => {
       {user ? (
         <nav className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-4 shadow-md">
           <div className="container mx-auto flex justify-between items-center">
-            <div className="text-white text-2xl font-bold">
+            <div className="text-white text-lg font-bold">
               <Link
                 to="/dashboard"
                 className="no-underline hover:text-gray-200 text-white transition duration-300"
               >
                 {user?.role === "REVIEWER"
-                  ? "Reviewer"
+                  ? `Reviewer: ${user?.email}`
                   : user?.role === "ADMIN"
-                  ? "Admin"
+                  ? `Admin: ${user?.email}`
                   : user?.role === "USER"
                   ? "Coder"
                   : "Dev"}
@@ -32,17 +32,18 @@ const Navbar = () => {
             </div>
             <div className="hidden md:flex space-x-6 items-center">
               <Link
+                to="/profile"
+                className="text-white hover:text-gray-200 transition duration-300"
+              >
+                Profile{" "}
+              </Link>
+              <Link
                 to="/dashboard"
                 className="text-white hover:text-gray-200 transition duration-300"
               >
                 Assignments
               </Link>
-              <Link
-                to="/profile"
-                className="text-white hover:text-gray-200 transition duration-300"
-              >
-                Profile
-              </Link>
+
               <button
                 onClick={handleLogout}
                 className="text-white hover:text-gray-200 transition duration-300 focus:outline-none"

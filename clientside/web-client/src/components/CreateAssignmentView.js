@@ -68,10 +68,11 @@ const CreateAssignmentView = () => {
         ...assignment,
         assignmentNumber: nextAssignmentNumber - 1,
       };
-      const response = CreateAssignment(newAssignment, jwt);
+      const response = await CreateAssignment(newAssignment, jwt);
+      console.log("status->", response)
       if (response.status === 201) {
         alert("Assignment created successfully!");
-        navigate(`/dashboard`);
+        navigate("/dashboard");
       }
     } catch (error) {
       if (error.message === "Session expired. Please log in again.") {

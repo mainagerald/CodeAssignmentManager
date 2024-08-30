@@ -31,7 +31,7 @@ function App() {
           }
         />
         <Route
-          path="/assignments/:id"
+          path="/assignments/:assignmentId"
           element={
             <PrivateRoute>
               {user?.role === "REVIEWER" ? <ReviewerAssignmentView /> : <AssignmentView />}

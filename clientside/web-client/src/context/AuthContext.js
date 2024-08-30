@@ -13,8 +13,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (jwt) {
       const decodedToken = jwtDecode(jwt);
+      console.log(decodedToken);
+      
       setUser({
         role: decodedToken.authorities[0],
+        email: decodedToken.sub
       });
     } else {
       setUser(null);

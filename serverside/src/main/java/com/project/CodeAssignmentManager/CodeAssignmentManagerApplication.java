@@ -25,23 +25,23 @@ public class CodeAssignmentManagerApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		//admin
-//		User adminAccount = userRepository.findByRole(Role.ADMIN);
+//		User adminAccount = userRepository.findByAdmin(Role.ADMIN);
 //		if(adminAccount==null){
 //			User user = new User();
-//			user.setEmail("Admin@gmail.com");
+//			user.setEmail("Admin2@gmail.com");
 //			user.setRole(Role.ADMIN);
 //			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
 //			userRepository.save(user);
 //		}
-
-		//code reviewer
-		List<User> reviewers = userRepository.findByRole(Role.REVIEWER);
-		if(reviewers.isEmpty()){
-			User user = new User();
-			user.setEmail("Rev2@gmail.com");
-			user.setRole(Role.REVIEWER);
-			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
-			userRepository.save(user);
-		}
+//
+//		//code reviewer
+//		List<User> reviewers = userRepository.findByRole(Role.REVIEWER);
+//		if(reviewers.isEmpty()){
+//			User user = new User();
+//			user.setEmail("Rev2@gmail.com");
+//			user.setRole(Role.REVIEWER);
+//			user.setPassword(new BCryptPasswordEncoder().encode("123456"));
+//			userRepository.save(user);
+//		}
 	}
 }

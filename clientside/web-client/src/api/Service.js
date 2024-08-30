@@ -27,7 +27,7 @@ export const getAssignmentById = async (assignmentId, jwt) => {
         },
       }
     );
-    return response.data;
+    return response;
   } catch (error) {
     if (error.response && error.response.status === 401) {
       throw new Error("Session expired. Please log in again.");
@@ -157,7 +157,7 @@ export const putRejectAssignment = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${jwt}`,
         },
-      }
+      } 
     );
     return response;
   } catch (error) {
@@ -189,10 +189,28 @@ export const putClaimAssignment = async (assignmentId, jwt) => {
   }
 };
 
-export const postComment=async(comment, assignmentId, jwt)=>{
+export const postComment=async(comment, jwt)=>{
   try{
-  const response = await apiClient.post(`${BaseUrl}/assignments/comment/${assignmentId}`,
+  const response = await apiClient.post(`${BaseUrl}/comments/create`,
     comment,
+    {
+      headers:{
+        "Content-Type" : "application/json",
+        Authorization: `Bearer ${jwt}`
+      }
+    }
+  )
+  return response;
+} catch (error) {
+  if (error.response && error.response.status === 401) {
+    throw new Error("Session expired. Please log in again.");
+  }
+  throw new Error(error.response?.data?.message || "Put failed");
+}
+}
+export const getComments=async(assignmentId, jwt)=>{
+  try{
+  const response = await apiClient.get(`${BaseUrl}/comments/comments?id=${assignmentId}`,
     {
       headers:{
         "Content-Type" : "application/json",
