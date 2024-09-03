@@ -27,9 +27,13 @@ public class CommentController {
     public ResponseEntity<CommentResponseDto> addComment(@Valid @RequestBody CommentCreateDto createDto, @AuthenticationPrincipal User user){
         return ResponseEntity.ok(commentService.createComment(createDto));
     }
-    @GetMapping("/comments{id}")
-    public ResponseEntity<Set<CommentResponseDto>> getComments(@RequestParam Long id){
-        return ResponseEntity.ok(commentService.getComments(id));
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<CommentResponseDto> putComment(@PathVariable Long id, @RequestBody CommentCreateDto createDto, @AuthenticationPrincipal User logged){
+        return ResponseEntity.ok(commentService.editComment(id, createDto, logged));
+    }
+    @GetMapping("/comments/{id}")
+    public ResponseEntity<Set<CommentResponseDto>> getComments(@RequestParam Long assignmentId){
+        return ResponseEntity.ok(commentService.getComments(assignmentId));
     }
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> removeComment(@PathVariable Long id){

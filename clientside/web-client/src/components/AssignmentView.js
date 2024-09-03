@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import Spinner from "../util/Spinner";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Form,
-  FormGroup,
   Button,
   Alert,
   Container,
@@ -12,13 +11,27 @@ import {
   Dropdown,
   ButtonGroup,
 } from "react-bootstrap";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+
+import Spinner from "../util/Spinner";
 import StatusBadge from "../util/StatusBadge";
+import Comment from "../util/Comment";
 import { useAuth } from "../context/AuthContext";
-import { getAssignmentById, updateAssignment } from "../api/Service";
+import {
+  deleteComment,
+  editComment,
+  getAssignmentById,
+  getComments,
+  postComment,
+  updateAssignment,
+} from "../api/Service";
+import CommentSection from "../util/CommentSection";
 
 const AssignmentView = () => {
   const { jwt, logout } = useAuth();
+  const { assignmentId } = useParams();
+  const navigate = useNavigate();
+
   const [assignment, setAssignment] = useState({
     branch: "",
     githubUrl: "",
@@ -30,78 +43,103 @@ const AssignmentView = () => {
   const [loading, setLoading] = useState(true);
   const [assignmentNumbers, setAssignmentNumberEnums] = useState([]);
   const [assignmentStatuses, setAssignmentStatusEnums] = useState([]);
-  const prevAssignment = useRef(assignment);
-  const {assignmentId} = useParams();
-  const navigate = useNavigate();
+  const [comment, setComment] = useState({
+    text: "",
+    assignment: assignmentId,
+    createdBy: jwtDecode(jwt).userId,
+  });
+  const [comments, setComments] = useState([]);
+
+  const handleError = useCallback((error) => {
+    if (error.message === "Session expired. Please log in again.") {
+      logout();
+      alert("Your session has expired. Please log in again.");
+      navigate("/login");
+    } else {
+      console.error("An error occurred:", error.message);
+      setError("Failed to update assignment.");
+    }
+  }, [logout, navigate]);
+
+  const fetchAssignment = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getAssignmentById(assignmentId, jwt);
+      console.log("view response", response);
+      
+      setAssignment(response);
+      setAssignmentNumberEnums(response.assignmentNumberEnums || []);
+      setAssignmentStatusEnums(response.assignmentStatusEnums || []);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId, jwt, handleError]);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const response = await getComments(assignmentId, jwt);
+        setComments(response);
+    } catch (error) {
+      handleError(error);
+    }
+  }, [assignmentId, jwt, handleError]);
 
   useEffect(() => {
-    const fetchAssignment = async () => {
-      try {
-        setLoading(true);
-        const data = await getAssignmentById(assignmentId, jwt);
-        setAssignment(data);
-        setAssignmentNumberEnums(data.assignmentNumberEnums || []);
-        setAssignmentStatusEnums(data.assignmentStatusEnums || []);
-      } catch (error) {
-        if (error.message === "Session expired. Please log in again.") {
-          logout();
-          alert("Your session has expired. Please log in again.");
-          navigate("/login");
-        } else {
-          console.error("An error occurred:", error.message);
-          setError("Failed to update assignment.");
-        }
-        setError(error.response?.data?.message || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAssignment();
-  }, [assignmentId, jwt]);
+    fetchComments();
+  }, [fetchAssignment, fetchComments]);
 
-  useEffect(() => {
-    prevAssignment.current = assignment;
-  }, [assignment]);
+  const updateAssignmentState = (prop, value) => {
+    setAssignment((prev) => ({ ...prev, [prop]: value }));
+  };
 
-  function updateAssignmentState(prop, value) {
-    setAssignment((prevAssignment) => ({
-      ...prevAssignment,
-      [prop]: value,
-    }));
-  }
-
-  async function submitUpdatedAssignment() {
+  const submitUpdatedAssignment = async () => {
     try {
       const updatedAssignment = {
         ...assignment,
         status: "Submitted",
       };
-
-      const updatedAssignmentResponse = await updateAssignment(
-        assignmentId,
-        updatedAssignment,
-        jwt
-      );
-      setAssignment(updatedAssignmentResponse);
+      const response = await updateAssignment(assignmentId, updatedAssignment, jwt);
+      setAssignment(response);
       alert("Assignment updated and submitted successfully!");
       navigate("/dashboard");
     } catch (error) {
-      if (error.message === "Session expired. Please log in again.") {
-        logout();
-        alert("Your session has expired. Please log in again.");
-        navigate("/login");
-      } else {
-        console.error("An error occurred:", error.message);
-        setError("Failed to update assignment.");
-      }
+      handleError(error);
     }
-  }
+  };
+
+  const handleCommentSubmit = async () => {
+    try {
+      const response = await postComment(comment, assignmentId, jwt);
+      if (response.status === 200) {
+        alert("Comment added successfully!");
+        fetchComments();
+        setComment((prev) => ({ ...prev, text: "" }));
+      }
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const handleCommentAction = async (action, commentId) => {
+    try {
+      const response = await (action === "edit" ? editComment(commentId, jwt) : deleteComment(commentId, jwt));
+      if (response.status === 200) {
+        alert(`Comment ${action === "edit" ? "updated" : "deleted"}!`);
+        fetchComments();
+      }
+    } catch (error) {
+      handleError(error);
+    }
+  };
 
   if (loading) {
     return (
       <Container className="d-flex justify-content-center mt-5">
         <Spinner animation="border" role="status">
-          <span className="sr-only">loading</span>
+          <span className="sr-only">Loading...</span>
         </Spinner>
       </Container>
     );
@@ -112,129 +150,124 @@ const AssignmentView = () => {
   }
 
   return (
-    <div>
-      <div className="justify-content-end mt-1"></div>
-      <Container className="mt-3 p-4 bg-white shadow-md rounded">
-        <Row className="d-flex align-items-center mb-4">
-          <Col>
-            <h3 className="text-2xl font-bold">
-              Assignment {assignment.assignmentNumber?.assignmentNumber}
-            </h3>
-          </Col>
-          <Col>
-            <StatusBadge text={assignment.status} />
-          </Col>
-        </Row>
-        <div>
-          <Form>
-            <FormGroup
-              as={Row}
-              className="mb-3"
-              controlId="formAssignmentNumber"
-            >
-              <Form.Label column sm="3" className="font-semibold">
-                Assignment Number:
-              </Form.Label>
-              <Col sm="9">
-                <DropdownButton
-                  as={ButtonGroup}
-                  id="assignmentNumber"
-                  variant="info"
-                  title={
-                    assignment.assignmentNumber
-                      ? `Assignment ${assignment.assignmentNumber.assignmentNumber}`
-                      : "Select Assignment"
-                  }
-                  onSelect={(eventKey) =>
-                    updateAssignmentState(
-                      "assignmentNumber",
-                      assignmentNumbers.find(
-                        (item) => item.assignmentNumber === parseInt(eventKey)
-                      )
-                    )
-                  }
-                  className="w-full"
-                >
-                  {assignmentNumbers.map((item) => (
-                    <Dropdown.Item
-                      key={item.assignmentNumber}
-                      eventKey={item.assignmentNumber}
-                    >
-                      Assignment {item.assignmentNumber}: {item.name}
-                    </Dropdown.Item>
-                  ))}
-                </DropdownButton>
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3" controlId="formGithubUrl">
-              <Form.Label column sm="3" className="font-semibold">
-                Github URL:
-              </Form.Label>
-              <Col sm="9">
-                <Form.Control
-                  type="url"
-                  placeholder="Enter the GitHub URL"
-                  value={assignment.githubUrl || ""}
-                  onChange={(e) =>
-                    updateAssignmentState("githubUrl", e.target.value)
-                  }
-                  className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </Col>
-            </FormGroup>
-            <FormGroup as={Row} className="mb-3" controlId="formBranch">
-              <Form.Label column sm="3" className="font-semibold">
-                Branch:
-              </Form.Label>
-              <Col sm="9">
-                <Form.Control
-                  type="text"
-                  placeholder="Enter the branch name"
-                  value={assignment.branch || ""}
-                  onChange={(e) =>
-                    updateAssignmentState("branch", e.target.value)
-                  }
-                  className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </Col>
-            </FormGroup>
-            <div>
-              {assignment.status === "Completed" ? (
-                <FormGroup
-                  as={Row}
-                  className="mb-3"
-                  controlId="formCodeReviewVideoUrl"
-                >
-                  <Form.Label column sm="3" className="font-semibold">
-                    Review Video URL:
-                  </Form.Label>
-                  <Col
-                    sm="9"
-                    className="d-flex align-items-center font-semibold text-lg"
-                  >
-                    <Link to={assignment.codeReviewVideoUrl}>
-                      {assignment.codeReviewVideoUrl}
-                    </Link>
-                  </Col>
-                </FormGroup>
-              ) : null}
-            </div>
-            <div>
-              {assignment.status === "Completed" ? null : (
-                <Button
-                  type="button"
-                  className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  onClick={submitUpdatedAssignment}
-                >
-                  Submit Assignment
-                </Button>
-              )}
-            </div>
-          </Form>
-        </div>
-      </Container>
-    </div>
+    <Container className="mt-3 p-4 bg-white shadow-md rounded">
+      <Row className="d-flex align-items-center mb-4">
+        <Col>
+          <h3 className="text-2xl font-bold">
+            Assignment {assignment.assignmentNumber?.assignmentNumber}
+          </h3>
+        </Col>
+        <Col>
+          <StatusBadge text={assignment.status} />
+        </Col>
+      </Row>
+      <Form>
+        <AssignmentForm
+          assignment={assignment}
+          assignmentNumbers={assignmentNumbers}
+          updateAssignmentState={updateAssignmentState}
+        />
+        {assignment.status !== "Completed" && (
+          <Button
+            type="button"
+            className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            onClick={submitUpdatedAssignment}
+          >
+            Submit Assignment
+          </Button>
+        )}
+        <CommentSection
+          comment={comment}
+          setComment={setComment}
+          onSubmit={handleCommentSubmit}
+          comments={comments}
+          currentUserId={jwtDecode(jwt).userId}
+          onEdit={(id) => handleCommentAction("edit", id)}
+          onDelete={(id) => handleCommentAction("delete", id)}
+        />
+      </Form>
+    </Container>
   );
 };
+
+const AssignmentForm = ({ assignment, assignmentNumbers, updateAssignmentState }) => (
+  <>
+    <Form.Group as={Row} className="mb-3" controlId="formAssignmentNumber">
+      <Form.Label column sm="3" className="font-semibold">
+        Assignment Number:
+      </Form.Label>
+      <Col sm="9">
+        <DropdownButton
+          as={ButtonGroup}
+          id="assignmentNumber"
+          variant="info"
+          title={
+            assignment.assignmentNumber
+              ? `Assignment ${assignment.assignmentNumber.assignmentNumber}`
+              : "Select Assignment"
+          }
+          onSelect={(eventKey) =>
+            updateAssignmentState(
+              "assignmentNumber",
+              assignmentNumbers.find(
+                (item) => item.assignmentNumber === parseInt(eventKey)
+              )
+            )
+          }
+          className="w-full"
+        >
+          {assignmentNumbers.map((item) => (
+            <Dropdown.Item
+              key={item.assignmentNumber}
+              eventKey={item.assignmentNumber}
+            >
+              Assignment {item.assignmentNumber}: {item.name}
+            </Dropdown.Item>
+          ))}
+        </DropdownButton>
+      </Col>
+    </Form.Group>
+    <Form.Group as={Row} className="mb-3" controlId="formGithubUrl">
+      <Form.Label column sm="3" className="font-semibold">
+        Github URL:
+      </Form.Label>
+      <Col sm="9">
+        <Form.Control
+          type="url"
+          placeholder="Enter the GitHub URL"
+          value={assignment.githubUrl || ""}
+          onChange={(e) => updateAssignmentState("githubUrl", e.target.value)}
+          className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </Col>
+    </Form.Group>
+    <Form.Group as={Row} className="mb-3" controlId="formBranch">
+      <Form.Label column sm="3" className="font-semibold">
+        Branch:
+      </Form.Label>
+      <Col sm="9">
+        <Form.Control
+          type="text"
+          placeholder="Enter the branch name"
+          value={assignment.branch || ""}
+          onChange={(e) => updateAssignmentState("branch", e.target.value)}
+          className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </Col>
+    </Form.Group>
+    {assignment.status === "Completed" && (
+      <Form.Group as={Row} className="mb-3" controlId="formCodeReviewVideoUrl">
+        <Form.Label column sm="3" className="font-semibold">
+          Review Video URL:
+        </Form.Label>
+        <Col sm="9" className="d-flex align-items-center font-semibold text-lg">
+          <a href={assignment.codeReviewVideoUrl} target="_blank" rel="noopener noreferrer">
+            {assignment.codeReviewVideoUrl}
+          </a>
+        </Col>
+      </Form.Group>
+    )}
+  </>
+);
 
 export default AssignmentView;

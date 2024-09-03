@@ -1,125 +1,102 @@
 import React, { useEffect, useState } from "react";
-import { BaseUrl } from "../api/Constants";
-import Spinner from "../util/Spinner";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, Card } from "react-bootstrap";
+import { Button, Card } from "react-bootstrap";
+import Spinner from "../util/Spinner";
 import StatusBadge from "../util/StatusBadge";
 import { useAuth } from "../context/AuthContext";
-import { getAssignments, putClaimAssignment } from "../api/Service";
+import { claimAssignment, getAssignments } from "../api/Service";
 
 const ReviewerDashboard = () => {
   const navigate = useNavigate();
   const { jwt, logout } = useAuth();
-  const [assignments, setAssignments] = useState(null);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log("fetching assignments");
-    getAvailableAssignments();
+    fetchAvailableAssignments();
   }, []);
 
-  async function getAvailableAssignments() {
+  const fetchAvailableAssignments = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await getAssignments(jwt);
-      if (response.status === 200) {
-        setAssignments(response.data);
-      }
+      setAssignments(response);
     } catch (error) {
-      if (error.message === "Session expired. Please log in again.") {
-        logout();
-        alert("Your session has expired. Please log in again.");
-        navigate("/login");
-      } else {
-        alert("Failed to fetch assignments!");
-      }
-      console.error(error);
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function claimAssignment(assignmentId) {
+  const handleAuthError = (error) => {
+    if (error.message === "Session expired. Please log in again.") {
+      logout();
+      alert("Your session has expired. Please log in again.");
+      navigate("/login");
+    } else {
+      alert("Failed to fetch assignments!");
+      console.error(error);
+    }
+  };
+
+  const claimAssignmentHandler = async (assignmentId) => {
     try {
-      const response = await putClaimAssignment(assignmentId, jwt);
+      const response = await claimAssignment(assignmentId, jwt);
       if (response.status === 200) {
         setAssignments((prevAssignments) =>
           prevAssignments.map((assignment) =>
             assignment.id === assignmentId
-              ? {
-                  ...assignment,
-                  status: "In review",
-                  reviewer: response.data.reviewer,
-                }
+              ? { ...assignment, status: "In review", reviewer: response.data.reviewer }
               : assignment
           )
         );
         alert("Assignment claimed successfully!");
-        getAvailableAssignments();
+        fetchAvailableAssignments();
       }
     } catch (error) {
-      alert(
-        "Failed to claim assignment: " +
-          (error.response?.data?.message || error.message)
-      );
+      alert("Failed to claim assignment: " + (error.response?.data?.message || error.message));
       console.error(error);
     }
-  }
-
-  if (loading) return <Spinner />;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
+  };
 
   const renderAssignments = (status) => {
-    const filteredAssignments = assignments.filter(
-      (assignment) => assignment.status === status
-    );
-    return filteredAssignments.length === 0 ? (
-      <div className="text-center text-gray-500">No assignments available.</div>
-    ) : (
+    const filteredAssignments = assignments.filter((assignment) => assignment.status === status);
+    
+    if (filteredAssignments.length === 0) {
+      return <div className="text-center text-gray-500">No assignments available.</div>;
+    }
+
+    return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <p>TODO: add dateTime for assignment creation. reviewed at, etc</p>
         {filteredAssignments.map((assignment) => (
-          <Card
-            key={assignment.id}
-            className="shadow-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-blue-400 to-indigo-400 text-white"
-          >
+          <Card key={assignment.id} className="shadow-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-blue-400 to-indigo-400 text-white">
             <Card.Body className="flex flex-col">
               <Card.Title className="text-lg font-semibold">
+              {console.log("number", assignment.assignmentNumber.assignmentNumber)
+                }
                 Assignment {assignment.assignmentNumber.assignmentNumber}
+                
               </Card.Title>
-              <div className="d-flex align-items-start mb-2 mt-1">
-                <StatusBadge text={assignment.status} />
-              </div>
+              <StatusBadge text={assignment.status} />
               <Card.Text className="text-sm">
                 <strong>Github URL:</strong> {assignment.githubUrl}
               </Card.Text>
               <Card.Text className="text-sm">
                 <strong>Branch:</strong> {assignment.branch}
               </Card.Text>
-              <div className="mt-auto">
-                <Button
-                  className="w-full"
-                  variant="light"
-                  onClick={() => {
-                    status === "Submitted"
-                      ? claimAssignment(assignment.id)
-                      : navigate(`/assignments/${assignment.id}`);
-                  }}
-                >
-                  {status === "Submitted"
-                    ? "Claim Assignment"
-                    : status === "In review"
-                    ? "Assess"
-                    : status === "Pending Submission"
-                    ? "Submit"
-                    : status === "Needs update"
-                    ? "View"
-                    : status === "Completed"
-                    ? "View"
-                    : ""}
-                </Button>
-              </div>
+              <Button
+                className="mt-auto w-full"
+                variant="light"
+                onClick={() => {
+                  status === "Submitted"
+                    ? claimAssignmentHandler(assignment.id)
+                    : navigate(`/assignments/${assignment.id}`);
+                }}
+              >
+                {getButtonLabel(status)}
+              </Button>
             </Card.Body>
           </Card>
         ))}
@@ -127,29 +104,32 @@ const ReviewerDashboard = () => {
     );
   };
 
+  const getButtonLabel = (status) => {
+    switch (status) {
+      case "Submitted":
+        return "Claim Assignment";
+      case "In review":
+        return "Assess";
+      case "Needs update":
+      case "Completed":
+        return "View";
+      default:
+        return "";
+    }
+  };
+
+  if (loading) return <Spinner />;
+  if (error) return <div className="text-center text-red-500">{error}</div>;
+
   return (
-    <div>
-      <div className="container mx-auto mt-5 p-4">
-        <h1 className="text-2xl font-bold mb-2">Reviewer Dashboard</h1>
-
-        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
-          <h3>Awaiting Review</h3>
-          {renderAssignments("Submitted")}
+    <div className="container mx-auto mt-5 p-4">
+      <h1 className="text-2xl font-bold mb-2">Reviewer Dashboard</h1>
+      {["Submitted", "In review", "Needs update", "Completed"].map((status) => (
+        <div key={status} className="assignments-section border-2 mt-2 mb-2 px-2 py-2 rounded">
+          <h3>{status}</h3>
+          {renderAssignments(status)}
         </div>
-
-        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
-          <h3>In Review</h3>
-          {renderAssignments("In review")}
-        </div>
-        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
-          <h3>Needs Update</h3>
-          {renderAssignments("Needs update")}
-        </div>
-        <div className="assignments-section border-2 mt-2 mb-2 mr-2 ml-2 px-2 py-2 rounded">
-          <h3>Completed</h3>
-          {renderAssignments("Completed")}
-        </div>
-      </div>
+      ))}
     </div>
   );
 };

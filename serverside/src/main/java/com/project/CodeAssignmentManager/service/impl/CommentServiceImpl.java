@@ -66,6 +66,25 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.deleteById(commentId);
     }
 
+    @Override
+    public CommentResponseDto editComment(Long id, CommentCreateDto createDto, User logged) {
+        User editor = userRepository.findById(createDto.getCreatedBy()).orElseThrow(()-> new NotFoundException("No user attached to comment"));
+        if(!editor.getId().equals(logged.getId())){
+          throw new UnauthorizedException("User unauthorized to edit the comment");
+        }
+        Comment comment = commentRepository.findById(id).orElseThrow(()-> new NotFoundException("No comment with the given id!"));
+        comment.setText(createDto.getText());
+        comment.setCreatedAt(LocalDateTime.now());
+        var savedComment = commentRepository.save(comment);
+        CommentResponseDto responseDto = new CommentResponseDto();
+        responseDto.setText(savedComment.getText());
+        responseDto.setCreatedAt(savedComment.getCreatedAt());
+        responseDto.setCreatedBy(savedComment.getCreatedBy().getId());
+        responseDto.setId(savedComment.getId());
+        responseDto.setUsername(editor.getFirstName());
+        return responseDto;
+    }
+
     private CommentResponseDto convertToListDto(Comment comment){
         User creator = userRepository.findById(comment.getCreatedBy().getId()).orElseThrow(()-> new NotFoundException("Commenter not found"));
         var username = creator.getFirstName();

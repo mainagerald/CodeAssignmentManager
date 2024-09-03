@@ -2,246 +2,112 @@ import apiClient from "./Interceptor/apiClient";
 
 const BaseUrl = "http://localhost:8888/api";
 
-export const logIn = async (loginRequest) => {
+const handleResponse = async (promise) => {
   try {
-    const response = await apiClient.post(`${BaseUrl}/auth/signin`, loginRequest, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
-  } catch (error) {
-console.log(error);
-    throw new Error(error.response?.data?.message || "Login failed");
-  }
-};
-
-export const getAssignmentById = async (assignmentId, jwt) => {
-  try {
-    const response = await apiClient.get(
-      `${BaseUrl}/assignments/getById/${assignmentId}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      }
-    );
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Fetch failed");
-  }
-};
-
-export const updateAssignment = async (
-  assignmentId,
-  updatedAssignment,
-  jwt
-) => {
-  try {
-    const response = await apiClient.put(
-      `${BaseUrl}/assignments/update/${assignmentId}`,
-      updatedAssignment,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      }
-    );
+    const response = await promise;
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 401) {
       throw new Error("Session expired. Please log in again.");
     }
-    throw new Error(error.response?.data?.message || "Update failed");
+    throw new Error(error.response?.data?.message || "Request failed");
   }
 };
 
-export const getAssignments = async (jwt) => {
-  try {
-    const response = await apiClient.get(`${BaseUrl}/assignments/fetch`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
-    return response;
-  } catch (error) {
-    console.log("error--", error.response);
-    
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Fetch failed");
-  }
-};
+const createHeaders = (jwt) => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${jwt}`,
+});
 
-export const getAssignmentEnums = async (jwt) => {
-  try {
-    const response = await apiClient.get(`${BaseUrl}/assignments/enums`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Fetch failed");
-  }
-};
+export const logIn = (loginRequest) =>
+  handleResponse(
+    apiClient.post(`${BaseUrl}/auth/signin`, loginRequest, {
+      headers: { "Content-Type": "application/json" },
+    })
+  );
 
-export const CreateAssignment = async (newAssignment, jwt) => {
-  try {
-    const response = await apiClient.post(
-      `${BaseUrl}/assignments/create`,
-      newAssignment,
+export const getAssignmentById = (assignmentId, jwt) =>
+  handleResponse(
+    apiClient.get(`${BaseUrl}/assignments/getById/${assignmentId}`, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const updateAssignment = (assignmentId, updatedAssignment, jwt) =>
+  handleResponse(
+    apiClient.put(`${BaseUrl}/assignments/update/${assignmentId}`, updatedAssignment, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const getAssignments = (jwt) =>
+  handleResponse(
+    apiClient.get(`${BaseUrl}/assignments/fetch`, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const getAssignmentEnums = (jwt) =>
+  handleResponse(
+    apiClient.get(`${BaseUrl}/assignments/enums`, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const createAssignment = (newAssignment, jwt) =>
+  handleResponse(
+    apiClient.post(`${BaseUrl}/assignments/create`, newAssignment, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const reviewAssignment = (reviewedAssignment, assignmentId, jwt) =>
+  handleResponse(
+    apiClient.put(`${BaseUrl}/assignments/review/${assignmentId}`, reviewedAssignment, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const rejectAssignment = (rejectedAssignment, assignmentId, jwt) =>
+  handleResponse(
+    apiClient.put(`${BaseUrl}/assignments/review/${assignmentId}`, rejectedAssignment, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const claimAssignment = (assignmentId, jwt) =>
+  handleResponse(
+    apiClient.put(`${BaseUrl}/assignments/claim/${assignmentId}`, {}, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const postComment = (comment, jwt) =>
+  handleResponse(
+    apiClient.post(`${BaseUrl}/comments/create`, comment, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const getComments = (assignmentId, jwt) =>
+  handleResponse(
+    apiClient.get(`${BaseUrl}/comments/comments?id=${assignmentId}`, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const editComment = (commentId, jwt) =>
+  handleResponse(
+    apiClient.put(`${BaseUrl}/comments/edit/${commentId}`, {
+      headers: createHeaders(jwt),
+    })
+  );
+
+export const deleteComment = (commentId, jwt)=>
+  handleResponse(
+    apiClient.delete(`${BaseUrl}/comments/delete/${commentId}`,
       {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
+        headers: createHeaders(jwt),
       }
-    );
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Post failed");
-  }
-};
-
-export const putReviewAssignment = async (
-  reviewedAssignment,
-  assignmentId,
-  jwt
-) => {
-  try {
-    const response = await apiClient.put(
-      `${BaseUrl}/assignments/review/${assignmentId}`,
-      reviewedAssignment,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      }
-    );
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Put failed");
-  }
-};
-
-export const putRejectAssignment = async (
-  rejectedAssignment,
-  assignmentId,
-  jwt
-) => {
-  try {
-    const response = await apiClient.put(
-      `${BaseUrl}/assignments/review/${assignmentId}`,
-      rejectedAssignment,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      } 
-    );
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Put failed");
-  }
-};
-
-export const putClaimAssignment = async (assignmentId, jwt) => {
-  try {
-    const response = await apiClient.put(
-      `${BaseUrl}/assignments/claim/${assignmentId}`,
-      {},
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${jwt}`,
-        },
-      }
-    );
-    return response;
-  } catch (error) {
-    if (error.response && error.response.status === 401) {
-      throw new Error("Session expired. Please log in again.");
-    }
-    throw new Error(error.response?.data?.message || "Put failed");
-  }
-};
-
-export const postComment=async(comment, jwt)=>{
-  try{
-  const response = await apiClient.post(`${BaseUrl}/comments/create`,
-    comment,
-    {
-      headers:{
-        "Content-Type" : "application/json",
-        Authorization: `Bearer ${jwt}`
-      }
-    }
-  )
-  return response;
-} catch (error) {
-  if (error.response && error.response.status === 401) {
-    throw new Error("Session expired. Please log in again.");
-  }
-  throw new Error(error.response?.data?.message || "Put failed");
-}
-}
-export const getComments=async(assignmentId, jwt)=>{
-  try{
-  const response = await apiClient.get(`${BaseUrl}/comments/comments?id=${assignmentId}`,
-    {
-      headers:{
-        "Content-Type" : "application/json",
-        Authorization: `Bearer ${jwt}`
-      }
-    }
-  )
-  return response;
-} catch (error) {
-  if (error.response && error.response.status === 401) {
-    throw new Error("Session expired. Please log in again.");
-  }
-  throw new Error(error.response?.data?.message || "Put failed");
-}
-}
-
-export const deleteComment=async(commentId, jwt)=>{
-  try{
-  const response = await apiClient.delete(`${BaseUrl}/comments/delete/${commentId}`,
-    {
-      headers:{
-        "Content-Type" : "application/json",
-        Authorization: `Bearer ${jwt}`
-      }
-    }
-  )
-  return response;
-} catch (error) {
-  if (error.response && error.response.status === 401) {
-    throw new Error("Session expired. Please log in again.");
-  }
-  throw new Error(error.response?.data?.message || "Put failed");
-}
-}
+    )
+  );

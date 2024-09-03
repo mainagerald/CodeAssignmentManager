@@ -17,7 +17,7 @@ const Comment = (props) => {
         return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
       };
 
-  const { keyId, username, text, createdAt, onReply, onDelete, showDeleteButton } = props;
+  const { keyId, username, text, createdAt, onReply, onDelete, showDeleteButton, onEdit, showEditButton } = props;
 
   return (
     <div
@@ -29,16 +29,21 @@ const Comment = (props) => {
           {username}
         </div>
         <div className="text-gray-600 dark:text-gray-400 mt-1">{text}</div>
-        <div className="text-sm text-gray-500 dark:text-gray-500 mt-2 mr-0">
-          {timeAgo(createdAt)}
-        </div>
         <div className="flex items-center mt-2 space-x-4">
           <button
             onClick={onReply}
-            className="text-blue-500 hover:text-blue-700 font-semibold"
+            className="text-green-500 hover:text-blue-700 font-semibold"
           >
             Reply
           </button>
+          {showEditButton&&(
+            <button
+            onClick={onEdit}
+            className="text-red-500 hover:text-red-700 font-semibold"
+          >
+            Edit
+          </button>
+          )}
           {showDeleteButton && (
             <button
               onClick={onDelete}
@@ -47,9 +52,13 @@ const Comment = (props) => {
               Delete
             </button>
           )}
-        </div>
+        </div> 
       </div>
+      <div className="text-sm text-black-300 dark:text-gray-500 mt-2 mr-0">
+          Posted {timeAgo(createdAt)}
+        </div>
     </div>
+    
   );
 };
 
